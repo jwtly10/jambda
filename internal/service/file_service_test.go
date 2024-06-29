@@ -19,6 +19,7 @@ import (
 
 func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
+	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
 	// Mocks
 	repo := new(repository.MockFileRepository)
@@ -49,6 +50,7 @@ func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 
 func TestCanHandleFile(t *testing.T) {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
+	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
 	// Mocks
 	fileService := NewFileService(nil, logger)
@@ -71,6 +73,7 @@ func TestCanHandleFile(t *testing.T) {
 
 func TestCanExtractAndValidateAZip(t *testing.T) {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
+	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
 	// Mocks
 	fileService := NewFileService(nil, logger)

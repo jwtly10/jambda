@@ -9,6 +9,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 )
 
 require (
@@ -22,6 +23,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/lib/pq v1.10.9
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/spf13/afero v1.11.0
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.3
 	golang.org/x/tools v0.22.0 // indirect
