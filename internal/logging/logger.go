@@ -14,6 +14,8 @@ type Logger interface {
 	Infof(msg string, args ...any)
 	Warn(msg string, args ...any)
 	Error(msg string, args ...any)
+	Fatal(msg string, args ...any)
+	Fatalf(msg string, args ...any)
 }
 
 // CustomLogger implements the Logger interface
@@ -70,6 +72,19 @@ func (l *CustomLogger) Warn(msg string, args ...any) {
 // Error logs an error message
 func (l *CustomLogger) Error(msg string, args ...any) {
 	l.slogger.Error(msg, args...)
+}
+
+// Fatal panics program with error
+func (l *CustomLogger) Fatal(msg string, args ...any) {
+	l.slogger.Error(msg, args...)
+	panic(1)
+}
+
+// Fatalf panics program with formatted error
+func (l *CustomLogger) Fatalf(format string, args ...any) {
+	formattedMessage := fmt.Sprintf(format, args...)
+	l.slogger.Error(formattedMessage)
+	panic(1)
 }
 
 // Global logger instance

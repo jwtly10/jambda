@@ -1,0 +1,10 @@
+CREATE TABLE files
+(
+    id         SERIAL PRIMARY KEY,
+    external_id   VARCHAR(8)   NOT NULL,
+    state      VARCHAR(10)  NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+

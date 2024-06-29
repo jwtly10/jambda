@@ -6,7 +6,7 @@ import (
 
 	"github.com/jwtly10/jambda/api/middleware"
 	_ "github.com/jwtly10/jambda/docs"
-	"github.com/jwtly10/jambda/pkg/logging"
+	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/swaggo/http-swagger/v2"
 )
 

@@ -12,8 +12,12 @@ import (
 	"github.com/jwtly10/jambda/api/handlers"
 	"github.com/jwtly10/jambda/api/middleware"
 	"github.com/jwtly10/jambda/api/routes"
+	"github.com/jwtly10/jambda/config"
 	_ "github.com/jwtly10/jambda/docs"
-	"github.com/jwtly10/jambda/pkg/logging"
+	"github.com/jwtly10/jambda/internal/db"
+	"github.com/jwtly10/jambda/internal/logging"
+	"github.com/jwtly10/jambda/internal/repository"
+	"github.com/jwtly10/jambda/internal/service"
 )
 
 // @title Jambda - Serverless framework
@@ -24,20 +28,31 @@ import (
 // @contact.url https://www.github.com/jwtly10/jambda
 
 // @host localhost:8080
-// @BasePath /v1
+// @BasePath /v1/api
 func main() {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
 
-	uploadHandler := handlers.NewFunctionHandler(logger)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		logger.Fatal("Failed to load configuration:", err)
+	}
+
+	db, err := db.ConnectDB(cfg)
+	if err != nil {
+		logger.Fatal("Database connection failed:", err)
+	}
+	logger.Info("Database connected")
+
+	fileRepo := repository.NewFileRepository(db)
+	fileService := service.NewFileService(fileRepo, logger)
+	fileHandler := handlers.NewFileHandler(logger, *fileService)
 
 	router := api.NewAppRouter(logger)
 	router.SetupSwagger()
 
 	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
 
-	routes.NewUploadRoutes(router, logger, *uploadHandler, loggerMw)
-
-	logger.Info("Server starting on port 8080...")
+	routes.NewFileRoutes(router, logger, *fileHandler, loggerMw)
 
 	server := &http.Server{
 		Addr:    ":8080",

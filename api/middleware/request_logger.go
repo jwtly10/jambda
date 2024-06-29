@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jwtly10/jambda/pkg/logging"
+	"github.com/jwtly10/jambda/internal/logging"
 )
 
 type RequestLoggerMiddleware struct {

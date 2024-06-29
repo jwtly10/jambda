@@ -18,22 +18,43 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/upload-binary": {
-            "get": {
-                "description": "Responds with a plain text \"Hello world\" to any request.",
+        "/file/upload": {
+            "post": {
+                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable.",
                 "consumes": [
-                    "*/*"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
-                    "functions"
+                    "files"
                 ],
-                "summary": "Serve hello world",
+                "summary": "Upload and process a file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "upload",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Hello world",
+                        "description": "File uploaded and processed successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "string"
                         }
@@ -48,10 +69,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "0.1",
 	Host:             "localhost:8080",
-	BasePath:         "/v1",
+	BasePath:         "/v1/api",
 	Schemes:          []string{},
-	Title:            "Jambda - Serverless app framework",
-	Description:      "A WIP serverless framework for running function similar to AWS Lambda",
+	Title:            "Jambda - Serverless framework",
+	Description:      "A WIP serverless framework for running functions similar to AWS Lambda",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

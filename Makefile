@@ -1,6 +1,6 @@
 # Specify the default target that will be run when no arguments are given to make.
 .PHONY: all
-all: swag run
+all: test swag run
 
 # Target to generate Swagger documentation using swag init.
 .PHONY: swag
@@ -11,6 +11,11 @@ swag:
 .PHONY: run
 run:
 	go run main.go
+
+# Target to run Go tests
+.PHONY: test
+test: 
+	go test ./...
 
 # Target to build the Go application executable.
 .PHONY: build
