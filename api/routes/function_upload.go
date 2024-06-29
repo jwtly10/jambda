@@ -22,7 +22,7 @@ func NewUploadRoutes(router api.AppRouter, l logging.Logger, h handlers.Function
 
 	uploadHandler := http.HandlerFunc(routes.handlers.CreateNewFunction)
 	router.Get(
-		"/api/upload",
+		"/v1/api/upload-binary",
 		middleware.Chain(uploadHandler, mws...),
 	)
 

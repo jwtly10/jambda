@@ -1,0 +1,26 @@
+basePath: /v1
+host: localhost:8080
+info:
+  contact:
+    name: jwtly10
+    url: https://www.github.com/jwtly10/jambda
+  description: A WIP serverless framework for running function similar to AWS Lambda
+  title: Jambda - Serverless app framework
+  version: "0.1"
+paths:
+  /api/upload-binary:
+    get:
+      consumes:
+      - '*/*'
+      description: Responds with a plain text "Hello world" to any request.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Hello world
+          schema:
+            type: string
+      summary: Serve hello world
+      tags:
+      - functions
+swagger: "2.0"

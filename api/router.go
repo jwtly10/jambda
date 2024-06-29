@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/jwtly10/jambda/api/middleware"
+	_ "github.com/jwtly10/jambda/docs"
 	"github.com/jwtly10/jambda/pkg/logging"
+	"github.com/swaggo/http-swagger/v2"
 )
 
 type AppRouter struct {
@@ -26,6 +28,10 @@ func (r *AppRouter) handle(pattern string, handler http.Handler) {
 		handler = middleware.BeforeNext(handler)
 	}
 	r.ServeMux.Handle(pattern, handler)
+}
+
+func (r *AppRouter) SetupSwagger() {
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 }
 
 func (r *AppRouter) Use(middlewares ...middleware.Middleware) {

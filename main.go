@@ -12,15 +12,26 @@ import (
 	"github.com/jwtly10/jambda/api/handlers"
 	"github.com/jwtly10/jambda/api/middleware"
 	"github.com/jwtly10/jambda/api/routes"
+	_ "github.com/jwtly10/jambda/docs"
 	"github.com/jwtly10/jambda/pkg/logging"
 )
 
+// @title Jambda - Serverless framework
+// @version 0.1
+// @description A WIP serverless framework for running functions similar to AWS Lambda
+
+// @contact.name jwtly10
+// @contact.url https://www.github.com/jwtly10/jambda
+
+// @host localhost:8080
+// @BasePath /v1
 func main() {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
 
 	uploadHandler := handlers.NewFunctionHandler(logger)
 
 	router := api.NewAppRouter(logger)
+	router.SetupSwagger()
 
 	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
 

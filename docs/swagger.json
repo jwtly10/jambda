@@ -1,0 +1,39 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A WIP serverless framework for running function similar to AWS Lambda",
+        "title": "Jambda - Serverless app framework",
+        "contact": {
+            "name": "jwtly10",
+            "url": "https://www.github.com/jwtly10/jambda"
+        },
+        "version": "0.1"
+    },
+    "host": "localhost:8080",
+    "basePath": "/v1",
+    "paths": {
+        "/api/upload-binary": {
+            "get": {
+                "description": "Responds with a plain text \"Hello world\" to any request.",
+                "consumes": [
+                    "*/*"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "functions"
+                ],
+                "summary": "Serve hello world",
+                "responses": {
+                    "200": {
+                        "description": "Hello world",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
