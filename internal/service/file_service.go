@@ -55,6 +55,20 @@ func (fs *FileService) ProcessFileUpload(r *http.Request) error {
 	return fs.repo.InitFileMetaData(genId)
 }
 
+func (fs *FileService) IsValidFunctionId(functionId string) bool {
+	fileEntity, err := fs.repo.GetFileFromExternalId(functionId)
+	if err != nil {
+		fs.log.Error("error getting file meta data from external id", err)
+		return false
+	}
+
+	if fileEntity == nil {
+		return false
+	}
+
+	return true
+}
+
 func (fs *FileService) isValidZipFile(file multipart.File) bool {
 	buffer := make([]byte, 512)
 	_, err := file.Read(buffer)

@@ -11,10 +11,12 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/jwtly10/jambda/internal/logging"
+	"github.com/jwtly10/jambda/internal/service"
 )
 
 type DockerMiddleware struct {
 	Log logging.Logger
+	Fs  service.FileService
 }
 
 func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
@@ -22,6 +24,12 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 		// Get the functionID from the request
 		functionID := strings.TrimPrefix(r.URL.Path, "/v1/api/function/")
 		functionID = strings.SplitN(functionID, "/", 2)[0]
+
+		if !dmw.Fs.IsValidFunctionId(functionID) {
+			dmw.Log.Errorf("failed to validate function id %s", functionID)
+			http.Error(w, "Invalid function id", http.StatusNoContent)
+			return
+		}
 
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())

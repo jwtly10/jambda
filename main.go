@@ -50,15 +50,17 @@ func main() {
 	router := api.NewAppRouter(logger)
 	router.SetupSwagger()
 
+	// Setup services
+	fileRepo := repository.NewFileRepository(db)
+	fileService := service.NewFileService(fileRepo, logger, fs)
+
 	// Setup middlewares
 	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
-	dockerMw := &middleware.DockerMiddleware{Log: logger}
+	dockerMw := &middleware.DockerMiddleware{Log: logger, Fs: *fileService}
 
 	// Setup routes
 
 	// File routes
-	fileRepo := repository.NewFileRepository(db)
-	fileService := service.NewFileService(fileRepo, logger, fs)
 	fileHandler := handlers.NewFileHandler(logger, *fileService)
 	routes.NewFileRoutes(router, logger, *fileHandler, loggerMw)
 
