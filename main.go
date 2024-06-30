@@ -18,19 +18,22 @@ import (
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/service"
+	"github.com/spf13/afero"
 )
 
 // @title Jambda - Serverless framework
 // @version 0.1
 // @description A WIP serverless framework for running functions similar to AWS Lambda
 
-// @contact.name jwtly10
+// @contact.name jwtly10/Jambda
 // @contact.url https://www.github.com/jwtly10/jambda
 
 // @host localhost:8080
 // @BasePath /v1/api
 func main() {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
+
+	fs := afero.NewOsFs()
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -43,17 +46,34 @@ func main() {
 	}
 	logger.Info("Database connected")
 
-	fileRepo := repository.NewFileRepository(db)
-	fileService := service.NewFileService(fileRepo, logger)
-	fileHandler := handlers.NewFileHandler(logger, *fileService)
-
+	// Init Router
 	router := api.NewAppRouter(logger)
 	router.SetupSwagger()
 
-	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
+	// Setup services
+	configValidator := service.NewConfigValidator(logger)
 
+	functionRepo := repository.NewFunctionRepository(db)
+	fileService := service.NewFileService(functionRepo, logger, fs, *configValidator)
+
+	dockerService := service.NewDockerService(logger, *functionRepo)
+
+	// Setup middlewares
+	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
+	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
+
+	// Setup routes
+
+	// File routes
+	fileHandler := handlers.NewFileHandler(logger, *fileService)
 	routes.NewFileRoutes(router, logger, *fileHandler, loggerMw)
 
+	// Gateway routes
+	gatewayService := service.NewGatewayService(logger)
+	gatewayHandler := handlers.NewGatewayHandler(logger, *gatewayService)
+	routes.NewGatewayRoutes(router, logger, *gatewayHandler, loggerMw, dockerMw)
+
+	// Start server
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router,

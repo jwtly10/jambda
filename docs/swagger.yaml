@@ -1,8 +1,43 @@
 basePath: /v1/api
+definitions:
+  data.FunctionConfig:
+    properties:
+      created_at:
+        type: string
+      env_vars:
+        additionalProperties:
+          type: string
+        type: object
+      image:
+        type: string
+      port:
+        type: integer
+      trigger:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  data.FunctionEntity:
+    properties:
+      configuration:
+        $ref: '#/definitions/data.FunctionConfig'
+      created_at:
+        type: string
+      external_id:
+        type: string
+      id:
+        type: integer
+      state:
+        type: string
+      updated_at:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
-    name: jwtly10
+    name: jwtly10/Jambda
     url: https://www.github.com/jwtly10/jambda
   description: A WIP serverless framework for running functions similar to AWS Lambda
   title: Jambda - Serverless framework
@@ -13,20 +48,25 @@ paths:
       consumes:
       - multipart/form-data
       description: Uploads a zip file, validates its contents, and processes it in
-        storage. The zip file must contain a "bootstrap" executable.
+        storage. The zip file must contain a "bootstrap" executable. Returns ExternalId
       parameters:
       - description: File to upload
         in: formData
         name: upload
         required: true
         type: file
+      - description: JSON configuration data
+        in: formData
+        name: config
+        required: true
+        type: string
       produces:
-      - text/plain
+      - application/json
       responses:
-        "200":
+        "201":
           description: File uploaded and processed successfully
           schema:
-            type: string
+            $ref: '#/definitions/data.FunctionEntity'
         "400":
           description: Bad Request
           schema:
@@ -38,4 +78,34 @@ paths:
       summary: Upload and process a file
       tags:
       - files
+  /function/{id}/:
+    post:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Middleware
+        figures out the instance URL to proxy the request to. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Make request to a REST function
+      tags:
+      - functions
 swagger: "2.0"

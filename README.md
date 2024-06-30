@@ -10,4 +10,4 @@ Jambda is a custom, self-hosted serverless framework designed to execute custom 
 - Security (HTTPS/Basic Auth)
 - Isolation through Docker
 - Logging for performance and issue troubleshooting
-- Frontend for uploading binarys/jars etc
+- Frontend for configuration

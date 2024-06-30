@@ -1,4 +1,3 @@
-// db.go
 package db
 
 import (
@@ -17,10 +16,4 @@ func ConnectDB(cfg *config.Config) (*sql.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-func SaveFileMetadata(db *sql.DB, filename string, filepath string) error {
-	query := `INSERT INTO files (filename, filepath) VALUES ($1, $2)`
-	_, err := db.Exec(query, filename, filepath)
-	return err
 }

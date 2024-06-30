@@ -2,6 +2,7 @@ package service
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -9,47 +10,83 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jwtly10/jambda/api/data"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/utils"
+	"github.com/spf13/afero"
 )
 
 type FileService struct {
-	repo repository.IFileRepository
+	repo repository.IFunctionRepository
 	log  logging.Logger
+	fs   afero.Fs
+	cv   ConfigValidator
 }
 
-func NewFileService(repo repository.IFileRepository, log logging.Logger) *FileService {
+func NewFileService(repo repository.IFunctionRepository, log logging.Logger, fs afero.Fs, cv ConfigValidator) *FileService {
 	return &FileService{
 		repo: repo,
 		log:  log,
+		fs:   fs,
+		cv:   cv,
 	}
 }
 
-func (fs *FileService) ProcessFileUpload(r *http.Request) error {
+func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity, error) {
 	genId := utils.GenerateShortID()
-	fs.log.Infof("Processing file for jambda function  %s", genId)
 
-	r.ParseMultipartForm(10 << 20) // Limit upload size
+	// Get config from request
+	configData := r.FormValue("config")
+	var config *data.FunctionConfig
+	err := json.Unmarshal([]byte(configData), &config)
+	if err != nil {
+		fs.log.Error("Error unmarshaling config json: ", err)
+		return &data.FunctionEntity{}, err
+	}
+
+	// Validate and store config
+	fs.log.Infof("Validating uploaded config for '%s'", genId)
+	err = fs.cv.ValidateConfig(config)
+	if err != nil {
+		return &data.FunctionEntity{}, err
+	}
+
+	fs.log.Infof("Processing file for jambda function  %s", genId)
+	r.ParseMultipartForm(10 << 20) // Limit upload size 10MB
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		return fmt.Errorf("error retrieving the file from request: %v", err)
+		return &data.FunctionEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
 	}
 	defer file.Close()
 
 	// Validate it's a zip file
 	if !fs.isValidZipFile(file) {
-		return fmt.Errorf("file is not a valid zip archive")
+		return &data.FunctionEntity{}, fmt.Errorf("file is not a valid zip archive")
 	}
 
 	// Extract, validate and save uploaded binary
 	err = fs.handleFile(genId, file)
 	if err != nil {
-		return err
+		return &data.FunctionEntity{}, err
 	}
 
-	return fs.repo.InitFileMetaData(genId)
+	return fs.repo.SaveFunction(genId, *config)
+}
+
+func (fs *FileService) IsValidExternalId(functionId string) bool {
+	fileEntity, err := fs.repo.GetFunctionEntityFromExternalId(functionId)
+	if err != nil {
+		fs.log.Error("error getting file meta data from external id", err)
+		return false
+	}
+
+	if fileEntity == nil {
+		return false
+	}
+
+	return true
 }
 
 func (fs *FileService) isValidZipFile(file multipart.File) bool {
@@ -124,5 +161,13 @@ func (fs *FileService) extractFile(f *zip.File, outputPath string) error {
 	defer outFile.Close()
 
 	_, err = io.Copy(outFile, rc)
+
+	// Set the output file to be executable
+	if err := os.Chmod(outputPath, 0755); err != nil {
+		fs.log.Errorf("Failed to set '%s' as executable: %s", outputPath, err)
+		return err
+	}
+
+	fs.log.Infof("Successfully extracted and set executable permissions for '%s'", outputPath)
 	return err
 }

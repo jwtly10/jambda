@@ -10,7 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "jwtly10",
+            "name": "jwtly10/Jambda",
             "url": "https://www.github.com/jwtly10/jambda"
         },
         "version": "{{.Version}}"
@@ -20,12 +20,12 @@ const docTemplate = `{
     "paths": {
         "/file/upload": {
             "post": {
-                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable.",
+                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable. Returns ExternalId",
                 "consumes": [
                     "multipart/form-data"
                 ],
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "files"
@@ -38,11 +38,62 @@ const docTemplate = `{
                         "name": "upload",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON configuration data",
+                        "name": "config",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "File uploaded and processed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/data.FunctionEntity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/function/{id}/": {
+            "post": {
+                "description": "Proxies requests to docker instance running executable. Middleware figures out the instance URL to proxy the request to. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "functions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "File uploaded and processed successfully",
+                        "description": "Request successfully proxied and processed",
                         "schema": {
                             "type": "string"
                         }
@@ -59,6 +110,60 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "data.FunctionConfig": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "data.FunctionEntity": {
+            "type": "object",
+            "properties": {
+                "configuration": {
+                    "$ref": "#/definitions/data.FunctionConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         }
