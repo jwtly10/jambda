@@ -13,6 +13,7 @@ import (
 
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -21,11 +22,13 @@ func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
 	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
+	fs := afero.NewOsFs()
+
 	// Mocks
 	repo := new(repository.MockFileRepository)
 	repo.On("InitFileMetaData", mock.Anything).Return(nil)
 
-	fileService := NewFileService(repo, logger)
+	fileService := NewFileService(repo, logger, fs)
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
@@ -52,8 +55,10 @@ func TestCanHandleFile(t *testing.T) {
 	logger := logging.NewLogger(false, slog.LevelDebug.Level())
 	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
+	fs := afero.NewOsFs()
+
 	// Mocks
-	fileService := NewFileService(nil, logger)
+	fileService := NewFileService(nil, logger, fs)
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
@@ -76,7 +81,8 @@ func TestCanExtractAndValidateAZip(t *testing.T) {
 	defer os.RemoveAll("binaries") // TODO: INJECT AFERO FS INSTEAD OF THIS
 
 	// Mocks
-	fileService := NewFileService(nil, logger)
+	fs := afero.NewOsFs()
+	fileService := NewFileService(nil, logger, fs)
 
 	tmpFile, err := os.CreateTemp("", "*.zip")
 	assert.NoError(t, err)

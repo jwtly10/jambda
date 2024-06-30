@@ -12,17 +12,20 @@ import (
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/utils"
+	"github.com/spf13/afero"
 )
 
 type FileService struct {
 	repo repository.IFileRepository
 	log  logging.Logger
+	fs   afero.Fs
 }
 
-func NewFileService(repo repository.IFileRepository, log logging.Logger) *FileService {
+func NewFileService(repo repository.IFileRepository, log logging.Logger, fs afero.Fs) *FileService {
 	return &FileService{
 		repo: repo,
 		log:  log,
+		fs:   fs,
 	}
 }
 
@@ -124,5 +127,13 @@ func (fs *FileService) extractFile(f *zip.File, outputPath string) error {
 	defer outFile.Close()
 
 	_, err = io.Copy(outFile, rc)
+
+	// Set the output file to be executable
+	if err := os.Chmod(outputPath, 0755); err != nil {
+		fs.log.Errorf("Failed to set '%s' as executable: %s", outputPath, err)
+		return err
+	}
+
+	fs.log.Infof("Successfully extracted and set executable permissions for '%s'", outputPath)
 	return err
 }

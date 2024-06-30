@@ -10,7 +10,7 @@ type GatewayHandler struct {
 	service service.GatewayService
 }
 
-func GatewayService(l logging.Logger, gs service.GatewayService) *GatewayHandler {
+func NewGatewayHandler(l logging.Logger, gs service.GatewayService) *GatewayHandler {
 	return &GatewayHandler{
 		log:     l,
 		service: gs,
