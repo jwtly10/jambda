@@ -5,17 +5,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockFileRepository is a mock implementation of FileRepository
-type MockFileRepository struct {
+// MockFunctionRepository is a mock implementation of FileRepository
+type MockFunctionRepository struct {
 	mock.Mock
 }
 
-func (m *MockFileRepository) InitFileMetaData(externalId string) (*data.FileEntity, error) {
+func (m *MockFunctionRepository) InitFunctionEntity(externalId string) (*data.FunctionEntity, error) {
 	args := m.Called(externalId)
 	return nil, args.Error(0)
 }
 
-func (m *MockFileRepository) GetFileFromExternalId(externalId string) (*data.FileEntity, error) {
+func (m *MockFunctionRepository) GetFunctionEntityFromExternalId(externalId string) (*data.FunctionEntity, error) {
+	args := m.Called(externalId)
+	return nil, args.Error(0)
+}
+
+func (m *MockFunctionRepository) GetConfigurationFromExternalId(externalId string) (*data.FunctionConfig, error) {
 	args := m.Called(externalId)
 	return nil, args.Error(0)
 }

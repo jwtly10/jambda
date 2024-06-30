@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"github.com/jwtly10/jambda/api"
 	"github.com/jwtly10/jambda/api/handlers"
@@ -26,30 +27,30 @@ func NewGatewayRoutes(router api.AppRouter, l logging.Logger, h handlers.Gateway
 	BASE_PATH := "/v1/api"
 
 	gatewayHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		containerIP, ok := r.Context().Value("containerIP").(string)
-		if !ok || containerIP == "" {
-			http.Error(w, "Container IP not found", http.StatusInternalServerError)
+		// Retrieve the base URL from the context, set by middleware
+		baseContainerUrl, ok := r.Context().Value("containerUrl").(string)
+		if !ok || baseContainerUrl == "" {
+			http.Error(w, "Container URL not found", http.StatusInternalServerError)
 			return
 		}
-		// containerPort, ok := r.Context().Value("containerPort").(int)
-		// if !ok || containerIP == "" {
-		// 	http.Error(w, "Container port not found", http.StatusInternalServerError)
-		// 	return
-		// }
 
-		// Construct the destination URL with the retrieved IP address
-		destURL := fmt.Sprintf("http://%s:%d", "localhost", 8001) // Port needs to be known
-		routes.log.Infof("Container destination url: %s", destURL)
-
-		// Parse the destination URL
-		url, err := url.Parse(destURL)
+		url, err := parseProxiedUrlGivenBaseUrl(baseContainerUrl, r.URL)
 		if err != nil {
-			http.Error(w, "Failed to parse destination URL", http.StatusInternalServerError)
+			routes.log.Errorf("Unable to route request to container: %v", err)
+			http.Error(w, "Unable to route request to container", http.StatusBadRequest)
 			return
 		}
 
-		// Create the reverse proxy
+		// Create and configure the reverse proxy
 		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy.Director = func(req *http.Request) {
+			req.URL = url
+			req.Host = url.Host
+			req.Header.Set("X-Forwarded-Host", req.Host)
+			req.Header.Set("X-Real-IP", req.RemoteAddr)
+		}
+
+		// Serve HTTP through the proxy
 		proxy.ServeHTTP(w, r)
 	})
 
@@ -59,4 +60,24 @@ func NewGatewayRoutes(router api.AppRouter, l logging.Logger, h handlers.Gateway
 	)
 
 	return routes
+}
+
+func parseProxiedUrlGivenBaseUrl(baseUrl string, proxiedUrl *url.URL) (*url.URL, error) {
+	pathParts := strings.SplitN(proxiedUrl.Path, "/", 6) // Assuming the pattern is /v1/api/function/{id}/extra
+	if len(pathParts) < 6 {
+		return nil, fmt.Errorf("invalid request path")
+	}
+	// Rebuild the path that needs to be forwarded
+	forwardPath := "/" + strings.Join(pathParts[5:], "/") + "?" + proxiedUrl.RawQuery
+
+	// Construct the full URL to forward the request to
+	destinationUrl := baseUrl + forwardPath
+
+	// Parse the destination URL
+	url, err := url.Parse(destinationUrl)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse destination Url")
+	}
+
+	return url, nil
 }

@@ -17,12 +17,12 @@ import (
 )
 
 type FileService struct {
-	repo repository.IFileRepository
+	repo repository.IFunctionRepository
 	log  logging.Logger
 	fs   afero.Fs
 }
 
-func NewFileService(repo repository.IFileRepository, log logging.Logger, fs afero.Fs) *FileService {
+func NewFileService(repo repository.IFunctionRepository, log logging.Logger, fs afero.Fs) *FileService {
 	return &FileService{
 		repo: repo,
 		log:  log,
@@ -30,7 +30,7 @@ func NewFileService(repo repository.IFileRepository, log logging.Logger, fs afer
 	}
 }
 
-func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FileEntity, error) {
+func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FunctionEntity, error) {
 	genId := utils.GenerateShortID()
 	fs.log.Infof("Processing file for jambda function  %s", genId)
 
@@ -38,26 +38,26 @@ func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FileEntity, err
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		return &data.FileEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
+		return &data.FunctionEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
 	}
 	defer file.Close()
 
 	// Validate it's a zip file
 	if !fs.isValidZipFile(file) {
-		return &data.FileEntity{}, fmt.Errorf("file is not a valid zip archive")
+		return &data.FunctionEntity{}, fmt.Errorf("file is not a valid zip archive")
 	}
 
 	// Extract, validate and save uploaded binary
 	err = fs.handleFile(genId, file)
 	if err != nil {
-		return &data.FileEntity{}, err
+		return &data.FunctionEntity{}, err
 	}
 
-	return fs.repo.InitFileMetaData(genId)
+	return fs.repo.InitFunctionEntity(genId)
 }
 
-func (fs *FileService) IsValidFunctionId(functionId string) bool {
-	fileEntity, err := fs.repo.GetFileFromExternalId(functionId)
+func (fs *FileService) IsValidExternalId(functionId string) bool {
+	fileEntity, err := fs.repo.GetFunctionEntityFromExternalId(functionId)
 	if err != nil {
 		fs.log.Error("error getting file meta data from external id", err)
 		return false

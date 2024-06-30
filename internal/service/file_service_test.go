@@ -25,8 +25,8 @@ func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 	fs := afero.NewOsFs()
 
 	// Mocks
-	repo := new(repository.MockFileRepository)
-	repo.On("InitFileMetaData", mock.Anything).Return(nil)
+	repo := new(repository.MockFunctionRepository)
+	repo.On("InitFunctionEntity", mock.Anything).Return(nil)
 
 	fileService := NewFileService(repo, logger, fs)
 
@@ -48,7 +48,7 @@ func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 	_, err = fileService.ProcessFileUpload(req)
 	assert.NoError(t, err)
 
-	repo.AssertCalled(t, "InitFileMetaData", mock.Anything)
+	repo.AssertCalled(t, "InitFunctionEntity", mock.Anything)
 }
 
 func TestCanHandleFile(t *testing.T) {

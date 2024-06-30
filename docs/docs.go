@@ -44,7 +44,7 @@ const docTemplate = `{
                     "201": {
                         "description": "File uploaded and processed successfully",
                         "schema": {
-                            "$ref": "#/definitions/data.FileEntity"
+                            "$ref": "#/definitions/data.FunctionEntity"
                         }
                     },
                     "400": {
@@ -64,9 +64,41 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "data.FileEntity": {
+        "data.FunctionConfig": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "data.FunctionEntity": {
+            "type": "object",
+            "properties": {
+                "configuration": {
+                    "$ref": "#/definitions/data.FunctionConfig"
+                },
                 "created_at": {
                     "type": "string"
                 },

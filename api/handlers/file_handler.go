@@ -26,7 +26,7 @@ func NewFileHandler(l logging.Logger, fs service.FileService) *FileHandler {
 // @Accept multipart/form-data
 // @Produce application/json
 // @Param upload formData file true "File to upload"
-// @Success 201 {object} data.FileEntity "File uploaded and processed successfully"
+// @Success 201 {object} data.FunctionEntity "File uploaded and processed successfully"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /file/upload [post]

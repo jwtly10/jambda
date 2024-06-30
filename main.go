@@ -51,12 +51,14 @@ func main() {
 	router.SetupSwagger()
 
 	// Setup services
-	fileRepo := repository.NewFileRepository(db)
-	fileService := service.NewFileService(fileRepo, logger, fs)
+	functionRepo := repository.NewFunctionRepository(db)
+	fileService := service.NewFileService(functionRepo, logger, fs)
+
+	dockerService := service.NewDockerService(logger, *functionRepo)
 
 	// Setup middlewares
 	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
-	dockerMw := &middleware.DockerMiddleware{Log: logger, Fs: *fileService}
+	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
 
 	// Setup routes
 
