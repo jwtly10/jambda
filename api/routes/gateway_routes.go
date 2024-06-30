@@ -64,11 +64,16 @@ func NewGatewayRoutes(router api.AppRouter, l logging.Logger, h handlers.Gateway
 
 func parseProxiedUrlGivenBaseUrl(baseUrl string, proxiedUrl *url.URL) (*url.URL, error) {
 	pathParts := strings.SplitN(proxiedUrl.Path, "/", 6) // Assuming the pattern is /v1/api/function/{id}/extra
-	if len(pathParts) < 6 {
+	if len(pathParts) < 5 {
 		return nil, fmt.Errorf("invalid request path")
 	}
 	// Rebuild the path that needs to be forwarded
 	forwardPath := "/" + strings.Join(pathParts[5:], "/") + "?" + proxiedUrl.RawQuery
+
+	// Remove trailing ?
+	if forwardPath[len(forwardPath)-1:] == "?" {
+		forwardPath = forwardPath[0 : len(forwardPath)-1]
+	}
 
 	// Construct the full URL to forward the request to
 	destinationUrl := baseUrl + forwardPath
