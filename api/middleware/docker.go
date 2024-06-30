@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/service"
@@ -54,7 +53,6 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			// TODO we should run health check, for now just wait a few seconds
 			// The current issue is we cannot get any ports unit service is running. So we need to
 			// Spend a few tries to get the port/url
-			time.Sleep(2 * time.Second)
 			// dmw.Log.Infof("Running health check!!")
 			// err = dmw.Ds.HealthCheckContainer(ctx, containerId, *config)
 			// if err != nil {

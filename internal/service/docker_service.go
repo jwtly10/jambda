@@ -60,7 +60,11 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 				if err := ds.cli.ContainerStart(ctx, containerId, container.StartOptions{}); err != nil {
 					ds.log.Error("Failed to start container: ", err)
 					return "", err
+
 				}
+				// TODO. Implement health check here
+				ds.log.Infof("TODO: Simulating health check")
+				time.Sleep(2 * time.Second)
 			}
 			break
 		}
@@ -108,6 +112,10 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 			ds.log.Error("Failed to start container: ", err)
 			return "", err
 		}
+
+		// TODO. Implement health check here
+		ds.log.Infof("TODO: Simulating health check")
+		time.Sleep(2 * time.Second)
 	}
 
 	return containerId, nil
