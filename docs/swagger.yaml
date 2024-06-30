@@ -73,4 +73,34 @@ paths:
       summary: Upload and process a file
       tags:
       - files
+  /function/{id}/:
+    post:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Middleware
+        figures out the instance URL to proxy the request to. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Make request to a REST function
+      tags:
+      - functions
 swagger: "2.0"

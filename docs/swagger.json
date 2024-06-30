@@ -55,6 +55,50 @@
                     }
                 }
             }
+        },
+        "/function/{id}/": {
+            "post": {
+                "description": "Proxies requests to docker instance running executable. Middleware figures out the instance URL to proxy the request to. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "functions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

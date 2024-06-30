@@ -1,4 +1,4 @@
-package routes
+package handlers
 
 import (
 	"net/url"
@@ -25,6 +25,13 @@ func TestCanParseUrlFromContainerBase(t *testing.T) {
 			baseUrl:     "http://localhost:8000",
 			proxiedUrl:  "/v1/api/function/57d4b724/getUser?query=param",
 			expectedUrl: "http://localhost:8000/getUser?query=param",
+			expectError: false,
+		},
+		{
+			name:        "Valid URL with multiple query params",
+			baseUrl:     "http://localhost:8000",
+			proxiedUrl:  "/v1/api/function/57d4b724/getUser?query=param&param2=param2",
+			expectedUrl: "http://localhost:8000/getUser?query=param&param2=param2",
 			expectError: false,
 		},
 		{
