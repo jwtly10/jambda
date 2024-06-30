@@ -2,6 +2,7 @@ package service
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -20,21 +21,39 @@ type FileService struct {
 	repo repository.IFunctionRepository
 	log  logging.Logger
 	fs   afero.Fs
+	cv   ConfigValidator
 }
 
-func NewFileService(repo repository.IFunctionRepository, log logging.Logger, fs afero.Fs) *FileService {
+func NewFileService(repo repository.IFunctionRepository, log logging.Logger, fs afero.Fs, cv ConfigValidator) *FileService {
 	return &FileService{
 		repo: repo,
 		log:  log,
 		fs:   fs,
+		cv:   cv,
 	}
 }
 
-func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FunctionEntity, error) {
+func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity, error) {
 	genId := utils.GenerateShortID()
-	fs.log.Infof("Processing file for jambda function  %s", genId)
 
-	r.ParseMultipartForm(10 << 20) // Limit upload size
+	// Get config from request
+	configData := r.FormValue("config")
+	var config *data.FunctionConfig
+	err := json.Unmarshal([]byte(configData), &config)
+	if err != nil {
+		fs.log.Error("Error unmarshaling config json: ", err)
+		return &data.FunctionEntity{}, err
+	}
+
+	// Validate and store config
+	fs.log.Infof("Validating uploaded config for '%s'", genId)
+	err = fs.cv.ValidateConfig(config)
+	if err != nil {
+		return &data.FunctionEntity{}, err
+	}
+
+	fs.log.Infof("Processing file for jambda function  %s", genId)
+	r.ParseMultipartForm(10 << 20) // Limit upload size 10MB
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
@@ -53,7 +72,7 @@ func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FunctionEntity,
 		return &data.FunctionEntity{}, err
 	}
 
-	return fs.repo.InitFunctionEntity(genId)
+	return fs.repo.SaveFunction(genId, *config)
 }
 
 func (fs *FileService) IsValidExternalId(functionId string) bool {

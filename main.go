@@ -51,8 +51,10 @@ func main() {
 	router.SetupSwagger()
 
 	// Setup services
+	configValidator := service.NewConfigValidator(logger)
+
 	functionRepo := repository.NewFunctionRepository(db)
-	fileService := service.NewFileService(functionRepo, logger, fs)
+	fileService := service.NewFileService(functionRepo, logger, fs, *configValidator)
 
 	dockerService := service.NewDockerService(logger, *functionRepo)
 

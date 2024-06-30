@@ -26,12 +26,13 @@ func NewFileHandler(l logging.Logger, fs service.FileService) *FileHandler {
 // @Accept multipart/form-data
 // @Produce application/json
 // @Param upload formData file true "File to upload"
+// @Param config formData string true "JSON configuration data"
 // @Success 201 {object} data.FunctionEntity "File uploaded and processed successfully"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /file/upload [post]
 func (nfh *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
-	res, err := nfh.service.ProcessFileUpload(r)
+	res, err := nfh.service.ProcessNewFunction(r)
 	if err != nil {
 		nfh.log.Error("uploading file failed with error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest) // Customize the status code based on error type

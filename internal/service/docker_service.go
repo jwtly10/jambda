@@ -78,7 +78,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 		// Create and start the container
 		cInstance, err := ds.cli.ContainerCreate(ctx, &container.Config{
 			Image: config.Image,
-			// Image: "golang:1.22",
+			// TODO: Allow custom cmd params?
 			Cmd: []string{"/bootstrap"},
 			Labels: map[string]string{
 				"function_id": functionId,

@@ -38,6 +38,13 @@ const docTemplate = `{
                         "name": "upload",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON configuration data",
+                        "name": "config",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {

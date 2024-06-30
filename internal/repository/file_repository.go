@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jwtly10/jambda/api/data"
 )
@@ -12,6 +13,7 @@ type IFunctionRepository interface {
 	InitFunctionEntity(externalId string) (*data.FunctionEntity, error)
 	GetFunctionEntityFromExternalId(externalId string) (*data.FunctionEntity, error)
 	GetConfigurationFromExternalId(externalId string) (*data.FunctionConfig, error)
+	SaveFunction(externalId string, config data.FunctionConfig) (*data.FunctionEntity, error)
 }
 
 type FunctionRepository struct {
@@ -20,6 +22,42 @@ type FunctionRepository struct {
 
 func NewFunctionRepository(db *sql.DB) *FunctionRepository {
 	return &FunctionRepository{Db: db}
+}
+
+func (repo *FunctionRepository) SaveFunction(externalId string, config data.FunctionConfig) (*data.FunctionEntity, error) {
+	configJSON, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// INSERT OR UPDATE
+	query := `
+    INSERT INTO functions_tb (external_id, state, configuration, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (external_id) DO UPDATE
+    SET state = EXCLUDED.state, configuration = EXCLUDED.configuration, updated_at = EXCLUDED.updated_at
+    RETURNING id, external_id, state, configuration, created_at, updated_at;
+    `
+
+	function := data.FunctionEntity{
+		ExternalId:    externalId,
+		State:         "active",
+		Configuration: &config,
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+	}
+
+	row := repo.Db.QueryRow(query, function.ExternalId, function.State, configJSON, function.CreatedAt, function.UpdatedAt)
+	if err := row.Scan(&function.ID, &function.ExternalId, &function.State, &configJSON, &function.CreatedAt, &function.UpdatedAt); err != nil {
+		return nil, err
+	}
+
+	// Unmarshal JSON back into the Configuration field
+	if err := json.Unmarshal(configJSON, &function.Configuration); err != nil {
+		return nil, err
+	}
+
+	return &function, nil
 }
 
 func (repo *FunctionRepository) GetConfigurationFromExternalId(externalId string) (*data.FunctionConfig, error) {

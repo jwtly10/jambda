@@ -55,6 +55,11 @@ paths:
         name: upload
         required: true
         type: file
+      - description: JSON configuration data
+        in: formData
+        name: config
+        required: true
+        type: string
       produces:
       - application/json
       responses:

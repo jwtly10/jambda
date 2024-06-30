@@ -27,6 +27,12 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			// TODO FIX ERROR MESSAGING
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		if config.Trigger != "http" {
+			dmw.Log.Errorf("Unsupport http trigger: %s", config.Trigger)
+			http.Error(w, "Http trigger not supported", http.StatusBadRequest)
+			return
 
 		}
 
@@ -35,7 +41,6 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 		// 2. Run functions based on function type
 		switch funcType := config.Type; funcType {
 		case "REST":
-			// This is a rest server function. So we should spin up the server in a container
 			containerId, err := dmw.Ds.StartContainer(ctx, r, functionId, *config)
 			if err != nil {
 				dmw.Log.Errorf("Error starting container: %v", err)
@@ -43,15 +48,13 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 				return
 			}
 
-			// Inject the ip and port so we can check health
-			// Pass the right ip and port of the container to the handler to route request properly
 			containerUrl, err := dmw.Ds.GetContainerUrl(ctx, containerId, *config)
 			if err != nil {
 				return
 			}
 
-			// TODO we should run health check, for now just wait a few seconds
-			// The current issue is we cannot get any ports unit service is running. So we need to
+			// TODO we should run health check on this container, for now just wait a few seconds
+			// The current issue is we cannot get any ports until service is running. So we need to
 			// Spend a few tries to get the port/url
 			// dmw.Log.Infof("Running health check!!")
 			// err = dmw.Ds.HealthCheckContainer(ctx, containerId, *config)
@@ -66,6 +69,9 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			r = r.WithContext(context.WithValue(r.Context(), "containerUrl", containerUrl))
 			next.ServeHTTP(w, r)
 		case "SINGLE":
+			// Here we will instead execute the binary, and if it can run within a few seconds
+			// Return the sdout
+			// Else just respond with running, maybe in future provide some option to notify when complete
 			http.Error(w, "Not implemented yet", http.StatusNotImplemented)
 			return
 		default:
