@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jwtly10/jambda/api/data"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/utils"
@@ -29,7 +30,7 @@ func NewFileService(repo repository.IFileRepository, log logging.Logger, fs afer
 	}
 }
 
-func (fs *FileService) ProcessFileUpload(r *http.Request) error {
+func (fs *FileService) ProcessFileUpload(r *http.Request) (*data.FileEntity, error) {
 	genId := utils.GenerateShortID()
 	fs.log.Infof("Processing file for jambda function  %s", genId)
 
@@ -37,19 +38,19 @@ func (fs *FileService) ProcessFileUpload(r *http.Request) error {
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		return fmt.Errorf("error retrieving the file from request: %v", err)
+		return &data.FileEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
 	}
 	defer file.Close()
 
 	// Validate it's a zip file
 	if !fs.isValidZipFile(file) {
-		return fmt.Errorf("file is not a valid zip archive")
+		return &data.FileEntity{}, fmt.Errorf("file is not a valid zip archive")
 	}
 
 	// Extract, validate and save uploaded binary
 	err = fs.handleFile(genId, file)
 	if err != nil {
-		return err
+		return &data.FileEntity{}, err
 	}
 
 	return fs.repo.InitFileMetaData(genId)

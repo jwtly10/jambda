@@ -25,7 +25,7 @@ import (
 // @version 0.1
 // @description A WIP serverless framework for running functions similar to AWS Lambda
 
-// @contact.name jwtly10
+// @contact.name jwtly10/Jambda
 // @contact.url https://www.github.com/jwtly10/jambda
 
 // @host localhost:8080

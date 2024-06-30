@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/jwtly10/jambda/internal/logging"
@@ -20,23 +21,31 @@ func NewFileHandler(l logging.Logger, fs service.FileService) *FileHandler {
 }
 
 // @Summary Upload and process a file
-// @Description Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a "bootstrap" executable.
+// @Description Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a "bootstrap" executable. Returns ExternalId
 // @Tags files
 // @Accept multipart/form-data
-// @Produce text/plain
+// @Produce application/json
 // @Param upload formData file true "File to upload"
-// @Success 200 {string} string "File uploaded and processed successfully"
+// @Success 201 {object} data.FileEntity "File uploaded and processed successfully"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /file/upload [post]
 func (nfh *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
-	err := nfh.service.ProcessFileUpload(r)
+	res, err := nfh.service.ProcessFileUpload(r)
 	if err != nil {
 		nfh.log.Error("uploading file failed with error: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest) // Customize the status code based on error type
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("File uploaded and processed successfully"))
+	jsonResponse, err := json.Marshal(res)
+	if err != nil {
+		nfh.log.Error("marshaling response failed with error: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jsonResponse)
 }

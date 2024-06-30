@@ -1,8 +1,22 @@
 basePath: /v1/api
+definitions:
+  data.FileEntity:
+    properties:
+      created_at:
+        type: string
+      external_id:
+        type: string
+      id:
+        type: integer
+      state:
+        type: string
+      updated_at:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
-    name: jwtly10
+    name: jwtly10/Jambda
     url: https://www.github.com/jwtly10/jambda
   description: A WIP serverless framework for running functions similar to AWS Lambda
   title: Jambda - Serverless framework
@@ -13,7 +27,7 @@ paths:
       consumes:
       - multipart/form-data
       description: Uploads a zip file, validates its contents, and processes it in
-        storage. The zip file must contain a "bootstrap" executable.
+        storage. The zip file must contain a "bootstrap" executable. Returns ExternalId
       parameters:
       - description: File to upload
         in: formData
@@ -21,12 +35,12 @@ paths:
         required: true
         type: file
       produces:
-      - text/plain
+      - application/json
       responses:
-        "200":
+        "201":
           description: File uploaded and processed successfully
           schema:
-            type: string
+            $ref: '#/definitions/data.FileEntity'
         "400":
           description: Bad Request
           schema:

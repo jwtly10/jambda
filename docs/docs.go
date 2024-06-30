@@ -10,7 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "jwtly10",
+            "name": "jwtly10/Jambda",
             "url": "https://www.github.com/jwtly10/jambda"
         },
         "version": "{{.Version}}"
@@ -20,12 +20,12 @@ const docTemplate = `{
     "paths": {
         "/file/upload": {
             "post": {
-                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable.",
+                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable. Returns ExternalId",
                 "consumes": [
                     "multipart/form-data"
                 ],
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "files"
@@ -41,10 +41,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "File uploaded and processed successfully",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/data.FileEntity"
                         }
                     },
                     "400": {
@@ -59,6 +59,28 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "data.FileEntity": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         }

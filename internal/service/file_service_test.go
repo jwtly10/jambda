@@ -45,7 +45,7 @@ func TestCanProcessFileAndCallDBWithNewRecord(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Call the method with mocked request
-	err = fileService.ProcessFileUpload(req)
+	_, err = fileService.ProcessFileUpload(req)
 	assert.NoError(t, err)
 
 	repo.AssertCalled(t, "InitFileMetaData", mock.Anything)
