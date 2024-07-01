@@ -25,17 +25,17 @@ func NewGatewayHandler(l logging.Logger, gs service.GatewayService) *GatewayHand
 
 // @Summary Make request to a REST function
 // @Description Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.
-// @Tags Jambda Function Executions
+// @Tags Executions
 // @Accept plain
 // @Produce */*
 // @Param id path string true "External ID"
 // @Success 200 {string} string "Request successfully proxied and processed"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /function/{id}/ [post]
-// @Router /function/{id}/ [get]
-// @Router /function/{id}/ [put]
-// @Router /function/{id}/ [delete]
+// @Router /execute/{id}/ [post]
+// @Router /execute/{id}/ [get]
+// @Router /execute/{id}/ [put]
+// @Router /execute/{id}/ [delete]
 func (gwh *GatewayHandler) ProxyToInstance(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the base URL from the context, set by docker middleware
 	baseContainerUrl, ok := r.Context().Value("containerUrl").(string)
@@ -68,7 +68,7 @@ func (gwh *GatewayHandler) ProxyToInstance(w http.ResponseWriter, r *http.Reques
 }
 
 func parseProxiedUrlGivenBaseUrl(baseUrl string, proxiedUrl *url.URL) (*url.URL, error) {
-	// NOTE!!! This assumes the pattern is /v1/api/function/{id}/extra?param=params
+	// NOTE!!! This assumes the pattern is /v1/api/execute/{id}/extra?param=params
 	pathParts := strings.SplitN(proxiedUrl.Path, "/", 6)
 	if len(pathParts) < 5 {
 		return nil, fmt.Errorf("invalid request path")

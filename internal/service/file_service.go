@@ -41,15 +41,15 @@ func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity
 	var config *data.FunctionConfig
 	err := json.Unmarshal([]byte(configData), &config)
 	if err != nil {
-		fs.log.Error("Error unmarshaling config json: ", err)
-		return &data.FunctionEntity{}, err
+		fs.log.Error("Error unmarshaling config json", err)
+		return nil, err
 	}
 
 	// Validate and store config
 	fs.log.Infof("Validating uploaded config for '%s'", genId)
 	err = fs.cv.ValidateConfig(config)
 	if err != nil {
-		return &data.FunctionEntity{}, err
+		return nil, err
 	}
 
 	fs.log.Infof("Processing file for jambda function  %s", genId)
@@ -57,19 +57,19 @@ func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		return &data.FunctionEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
+		return nil, fmt.Errorf("error retrieving the file from request: %v", err)
 	}
 	defer file.Close()
 
 	// Validate it's a zip file
 	if !fs.isValidZipFile(file) {
-		return &data.FunctionEntity{}, fmt.Errorf("file is not a valid zip archive")
+		return nil, fmt.Errorf("file is not a valid zip archive")
 	}
 
 	// Extract, validate and save uploaded binary
 	err = fs.handleFile(genId, file)
 	if err != nil {
-		return &data.FunctionEntity{}, err
+		return nil, err
 	}
 
 	return fs.repo.SaveFunction(genId, *config)

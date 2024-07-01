@@ -18,58 +18,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/file/upload": {
-            "post": {
-                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable. Returns ExternalId",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Function Submit"
-                ],
-                "summary": "Upload and process a file",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "File to upload",
-                        "name": "upload",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "JSON configuration data",
-                        "name": "config",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "File uploaded and processed successfully",
-                        "schema": {
-                            "$ref": "#/definitions/data.FunctionEntity"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/function/{id}/": {
+        "/execute/{id}/": {
             "get": {
                 "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
                 "consumes": [
@@ -79,7 +28,7 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "tags": [
-                    "Jambda Function Executions"
+                    "Executions"
                 ],
                 "summary": "Make request to a REST function",
                 "parameters": [
@@ -121,7 +70,7 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "tags": [
-                    "Jambda Function Executions"
+                    "Executions"
                 ],
                 "summary": "Make request to a REST function",
                 "parameters": [
@@ -163,7 +112,7 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "tags": [
-                    "Jambda Function Executions"
+                    "Executions"
                 ],
                 "summary": "Make request to a REST function",
                 "parameters": [
@@ -205,7 +154,7 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "tags": [
-                    "Jambda Function Executions"
+                    "Executions"
                 ],
                 "summary": "Make request to a REST function",
                 "parameters": [
@@ -238,15 +187,192 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/function": {
+            "get": {
+                "description": "Retrieves a list of all function entities stored in the system.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "List all functions",
+                "responses": {
+                    "200": {
+                        "description": "List of all functions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/data.FunctionEntity"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable. Returns ExternalId",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "Upload and process a file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "upload",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON configuration data",
+                        "name": "config",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "File uploaded and processed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/data.FunctionEntity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/function/{id}": {
+            "put": {
+                "description": "Updates an existing function config by submitting new config data",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "Update an existing function config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON configuration data",
+                        "name": "config",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Function updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/data.FunctionEntity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid ID or data",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found: Function not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a specific function entity identified by its ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "Delete a function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Function deleted successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request: Invalid ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found: Function not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "data.FunctionConfig": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "env_vars": {
                     "type": "object",
                     "additionalProperties": {
@@ -263,9 +389,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }

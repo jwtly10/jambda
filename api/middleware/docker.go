@@ -17,7 +17,7 @@ type DockerMiddleware struct {
 func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get the functionId from the request
-		functionId := strings.TrimPrefix(r.URL.Path, "/v1/api/function/")
+		functionId := strings.TrimPrefix(r.URL.Path, "/v1/api/execute/")
 		functionId = strings.SplitN(functionId, "/", 2)[0]
 
 		// 1. Validate the function id by getting the config for the function
