@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/jwtly10/jambda/api/data"
+	"github.com/jwtly10/jambda/internal/errors"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 )
@@ -35,7 +36,13 @@ func NewDockerService(log logging.Logger, fr repository.FunctionRepository) *Doc
 }
 
 func (ds *DockerService) GetFunctionConfiguration(externalId string) (*data.FunctionConfig, error) {
-	return ds.fr.GetConfigurationFromExternalId(externalId)
+	config, err := ds.fr.GetConfigurationFromExternalId(externalId)
+	if err != nil {
+		ds.log.Error("Failed to retrieve config from function '%s': ", externalId, err)
+		return nil, errors.NewInternalError(fmt.Sprintf("error retrieving function config from db: %v", err))
+	}
+
+	return config, nil
 }
 
 func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, functionId string, config data.FunctionConfig) (string, error) {
@@ -43,7 +50,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 	containers, err := ds.cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		ds.log.Error("Failed to list Docker containers: ", err)
-		return "", err
+		return "", errors.NewDockerError(fmt.Sprintf("error retrieving containers from docker: %v", err))
 	}
 
 	// get the containerId for either the running container, or the created container
@@ -54,15 +61,15 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 			containerId = inContainer.ID
 			containerFound = true
 			if inContainer.State == "running" {
-				ds.log.Infof("Container for function %s is already running", functionId)
+				ds.log.Infof("Container for function '%s' is already running", functionId)
 			} else {
-				ds.log.Infof("Container for function %s exists but is not running. Starting it now.", functionId)
+				ds.log.Infof("Container for function '%s' exists but is not running. Starting it now.", functionId)
 				// Start the container
 				if err := ds.cli.ContainerStart(ctx, containerId, container.StartOptions{}); err != nil {
-					ds.log.Error("Failed to start container: ", err)
-					return "", err
-
+					ds.log.Error("Failed to start container '%s': ", containerId, err)
+					return "", errors.NewDockerError(fmt.Sprintf("error starting docker container: %v", err))
 				}
+
 				// TODO. Implement health check here
 				ds.log.Infof("TODO: Simulating health check")
 				time.Sleep(2 * time.Second)
@@ -72,7 +79,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 	}
 
 	if !containerFound {
-		ds.log.Infof("No container found for id %s. Creating one now.", functionId)
+		ds.log.Infof("No container found for id '%s'. Creating one now.", functionId)
 		// TODO dont hard code path
 		var runCmd []string
 		var mountCmd string
@@ -122,7 +129,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 		}, nil, nil, "")
 		if err != nil {
 			ds.log.Error("Failed to create container: ", err)
-			return "", err
+			return "", errors.NewDockerError(fmt.Sprintf("error creating docker container: %v", err))
 		}
 
 		// Container was not found, so we created one...
@@ -131,7 +138,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 		// Start the container
 		if err := ds.cli.ContainerStart(ctx, cInstance.ID, container.StartOptions{}); err != nil {
 			ds.log.Error("Failed to start container: ", err)
-			return "", err
+			return "", errors.NewDockerError(fmt.Sprintf("error starting docker container: %v", err))
 		}
 
 		// TODO. Implement health check here
@@ -148,7 +155,7 @@ func (ds *DockerService) HealthCheckContainer(ctx context.Context, containerId s
 
 	url, err := ds.GetContainerUrl(ctx, containerId, config)
 	if err != nil {
-		return err
+		return fmt.Errorf("error inspecting container: %v", err)
 	}
 
 	for time.Now().Before(timeout) {
@@ -156,10 +163,12 @@ func (ds *DockerService) HealthCheckContainer(ctx context.Context, containerId s
 		if err == nil && resp.StatusCode == http.StatusOK {
 			return nil // Container is ready
 		}
+
 		// Wait a bit before checking again
-		ds.log.Errorf("Error during health check: %v", err)
+		ds.log.Warn("Error during health check: %v", err)
 		time.Sleep(2 * time.Second)
 	}
+
 	return fmt.Errorf("container did not become ready within the expected time")
 }
 

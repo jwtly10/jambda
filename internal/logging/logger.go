@@ -1,112 +1,112 @@
 package logging
 
 import (
-	"fmt"
-	"log/slog"
-	"os"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"sync"
 )
 
 // Logger is our custom logger interface
 type Logger interface {
-	Debug(msg string, args ...any)
-	Debugf(msg string, args ...any)
-	Info(msg string, args ...any)
-	Infof(msg string, args ...any)
-	Warn(msg string, args ...any)
-	Error(msg string, args ...any)
-	Errorf(msg string, args ...any)
-	Fatal(msg string, args ...any)
-	Fatalf(msg string, args ...any)
+	Debug(msg string, args ...interface{})
+	Debugf(format string, args ...interface{})
+	Info(msg string, args ...interface{})
+	Infof(format string, args ...interface{})
+	Warn(msg string, args ...interface{})
+	Error(msg string, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fatal(msg string, args ...interface{})
+	Fatalf(format string, args ...interface{})
 }
 
 // CustomLogger implements the Logger interface
 type CustomLogger struct {
-	slogger *slog.Logger
+	slogger *zap.SugaredLogger
 }
 
 // NewLogger creates a new CustomLogger
-func NewLogger(useJSON bool, level slog.Level) Logger {
-	var handler slog.Handler
-
-	opts := &slog.HandlerOptions{
-		Level: level,
-	}
-
+func NewLogger(useJSON bool, level zapcore.Level) Logger {
+	var config zap.Config
 	if useJSON {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
+		config = zap.NewProductionConfig()
 	} else {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+		config = zap.NewDevelopmentConfig()
 	}
+
+	config.Level = zap.NewAtomicLevelAt(level)
+	logger, _ := config.Build(
+		zap.AddCaller(),
+		zap.AddCallerSkip(1),
+	)
+	defer logger.Sync() // flushes buffer, if any
 
 	return &CustomLogger{
-		slogger: slog.New(handler),
+		slogger: logger.Sugar(),
 	}
 }
 
 // Debug logs a debug message
-func (l *CustomLogger) Debug(msg string, args ...any) {
-	l.slogger.Debug(msg, args...)
+func (l *CustomLogger) Debug(msg string, args ...interface{}) {
+	l.slogger.Debugw(msg, args...)
 }
 
 // Debugf logs a debug message with formatting.
 func (l *CustomLogger) Debugf(format string, args ...interface{}) {
-	formattedMessage := fmt.Sprintf(format, args...)
-	l.slogger.Debug(formattedMessage)
+	l.slogger.Debugf(format, args...)
 }
 
 // Info logs an info message
-func (l *CustomLogger) Info(msg string, args ...any) {
-	l.slogger.Info(msg, args...)
+func (l *CustomLogger) Info(msg string, args ...interface{}) {
+	l.slogger.Infow(msg, args...)
 }
 
 // Infof logs an info message with formatting.
 func (l *CustomLogger) Infof(format string, args ...interface{}) {
-	formattedMessage := fmt.Sprintf(format, args...)
-	l.slogger.Info(formattedMessage)
+	l.slogger.Infof(format, args...)
 }
 
 // Warn logs a warning message
-func (l *CustomLogger) Warn(msg string, args ...any) {
-	l.slogger.Warn(msg, args...)
+func (l *CustomLogger) Warn(msg string, args ...interface{}) {
+	l.slogger.Warnw(msg, args...)
 }
 
 // Error logs an error message
-func (l *CustomLogger) Error(msg string, args ...any) {
-	l.slogger.Error(msg, args...)
+func (l *CustomLogger) Error(msg string, args ...interface{}) {
+	l.slogger.Errorw(msg, args...)
 }
 
-// Errorf logs an info message with formatting.
+// Errorf logs an error message with formatting.
 func (l *CustomLogger) Errorf(format string, args ...interface{}) {
-	formattedMessage := fmt.Sprintf(format, args...)
-	l.slogger.Error(formattedMessage)
+	l.slogger.Errorf(format, args...)
 }
 
-// Fatal panics program with error
-func (l *CustomLogger) Fatal(msg string, args ...any) {
-	l.slogger.Error(msg, args...)
-	panic(1)
+// Fatal logs a fatal message and exits
+func (l *CustomLogger) Fatal(msg string, args ...interface{}) {
+	l.slogger.Fatalw(msg, args...)
 }
 
-// Fatalf panics program with formatted error
-func (l *CustomLogger) Fatalf(format string, args ...any) {
-	formattedMessage := fmt.Sprintf(format, args...)
-	l.slogger.Error(formattedMessage)
-	panic(1)
+// Fatalf logs a fatal message with formatting and exits
+func (l *CustomLogger) Fatalf(format string, args ...interface{}) {
+	l.slogger.Fatalf(format, args...)
 }
 
 // Global logger instance
-var globalLogger Logger
+var (
+	globalLogger Logger
+	once         sync.Once
+)
 
 // InitLogger initializes the global logger
-func InitLogger(useJSON bool, level slog.Level) {
-	globalLogger = NewLogger(useJSON, level)
+func InitLogger(useJSON bool, level zapcore.Level) {
+	once.Do(func() {
+		globalLogger = NewLogger(useJSON, level)
+	})
 }
 
 // GetLogger returns the global logger instance
 func GetLogger() Logger {
 	if globalLogger == nil {
-		// Default to a console logger with Info level if not initialized
-		globalLogger = NewLogger(false, slog.LevelInfo)
+		InitLogger(false, zapcore.InfoLevel)
 	}
 	return globalLogger
 }

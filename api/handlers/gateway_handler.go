@@ -9,6 +9,7 @@ import (
 
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/service"
+	"github.com/jwtly10/jambda/internal/utils"
 )
 
 type GatewayHandler struct {
@@ -30,8 +31,8 @@ func NewGatewayHandler(l logging.Logger, gs service.GatewayService) *GatewayHand
 // @Produce */*
 // @Param id path string true "External ID"
 // @Success 200 {string} string "Request successfully proxied and processed"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 400 {object} utils.ErrorResponse "Bad Request"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /execute/{id}/ [post]
 // @Router /execute/{id}/ [get]
 // @Router /execute/{id}/ [put]
@@ -40,14 +41,14 @@ func (gwh *GatewayHandler) ProxyToInstance(w http.ResponseWriter, r *http.Reques
 	// Retrieve the base URL from the context, set by docker middleware
 	baseContainerUrl, ok := r.Context().Value("containerUrl").(string)
 	if !ok || baseContainerUrl == "" {
-		http.Error(w, "Container URL not found", http.StatusInternalServerError)
+		utils.HandleInternalError(w, fmt.Errorf("Container URL not passed through context"))
 		return
 	}
 
 	url, err := parseProxiedUrlGivenBaseUrl(baseContainerUrl, r.URL)
 	if err != nil {
 		gwh.log.Errorf("Unable to route request to container: %v", err)
-		http.Error(w, "Unable to route request to container", http.StatusBadRequest)
+		utils.HandleInternalError(w, fmt.Errorf("Failed to parse url and proxy request - %v", err))
 		return
 	}
 

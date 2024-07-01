@@ -1,9 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/jwtly10/jambda/api/data"
+	"github.com/jwtly10/jambda/internal/errors"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 )
@@ -36,13 +38,13 @@ func (fs *FunctionService) UpdateConfig(externalId string, config *data.Function
 	err := fs.cv.ValidateConfig(config)
 	if err != nil {
 		fs.log.Errorf("Config validation failed %v", err)
-		return nil, err
+		return nil, errors.NewValidationError(fmt.Sprintf("error validating config json: %v", err))
 	}
 
 	res, err := fs.repo.UpdateConfigByExternalId(externalId, *config)
 	if err != nil {
-		fs.log.Error("Failed to retrieve functions: ", err)
-		return nil, err
+		fs.log.Error("Failed to retrieve function: ", err)
+		return nil, errors.NewInternalError(fmt.Sprintf("error updating new function config to db: %v", err))
 	}
 
 	return res, nil
@@ -53,7 +55,7 @@ func (fs *FunctionService) GetAllActiveFunctions() ([]data.FunctionEntity, error
 	functions, err := fs.repo.GetAllActiveFunctions()
 	if err != nil {
 		fs.log.Error("Failed to retrieve functions: ", err)
-		return nil, err
+		return nil, errors.NewInternalError(fmt.Sprintf("error retrieving active functions from db: %v", err))
 	}
 
 	if functions == nil {
@@ -68,7 +70,7 @@ func (fs *FunctionService) DeleteFunction(externalId string) error {
 	err := fs.repo.DeleteFunctionByExternalId(externalId)
 	if err != nil {
 		fs.log.Error("Failed to delete function: ", err)
-		return err
+		return errors.NewInternalError(fmt.Sprintf("error deleting function from db: %v", err))
 	}
 	// Now should also delete from the file system too TODO
 	return nil

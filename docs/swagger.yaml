@@ -30,6 +30,13 @@ definitions:
       updated_at:
         type: string
     type: object
+  utils.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -62,11 +69,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Make request to a REST function
       tags:
       - Executions
@@ -92,11 +99,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Make request to a REST function
       tags:
       - Executions
@@ -122,11 +129,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Make request to a REST function
       tags:
       - Executions
@@ -152,11 +159,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Make request to a REST function
       tags:
       - Executions
@@ -175,7 +182,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: List all functions
       tags:
       - Functions
@@ -205,11 +212,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Upload and process a file
       tags:
       - Functions
@@ -230,17 +237,13 @@ paths:
           schema:
             type: string
         "400":
-          description: 'Bad Request: Invalid ID'
+          description: Bad Request
           schema:
-            type: string
-        "404":
-          description: 'Not Found: Function not found'
-          schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Delete a function
       tags:
       - Functions
@@ -267,17 +270,13 @@ paths:
           schema:
             $ref: '#/definitions/data.FunctionEntity'
         "400":
-          description: 'Bad Request: Invalid ID or data'
+          description: Bad Request
           schema:
-            type: string
-        "404":
-          description: 'Not Found: Function not found'
-          schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Update an existing function config
       tags:
       - Functions

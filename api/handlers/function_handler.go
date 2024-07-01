@@ -10,6 +10,7 @@ import (
 	"github.com/jwtly10/jambda/api/data"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/service"
+	"github.com/jwtly10/jambda/internal/utils"
 )
 
 type FunctionHandler struct {
@@ -32,21 +33,21 @@ func NewFunctionHandler(l logging.Logger, fs service.FunctionService) *FunctionH
 // @Param upload formData file true "File to upload"
 // @Param config formData string true "JSON configuration data"
 // @Success 201 {object} data.FunctionEntity "File uploaded and processed successfully"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 400 {object} utils.ErrorResponse "Bad Request"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /function [post]
 func (nfh *FunctionHandler) UploadFunction(w http.ResponseWriter, r *http.Request) {
 	res, err := nfh.service.UploadFunction(r)
 	if err != nil {
 		nfh.log.Error("uploading file failed with error: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest) // Customize the status code based on error type
+		utils.HandleCustomErrors(w, err)
 		return
 	}
 
 	jsonResponse, err := json.Marshal(res)
 	if err != nil {
 		nfh.log.Error("marshaling response failed with error: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.HandleCustomErrors(w, err)
 		return
 	}
 
@@ -63,9 +64,8 @@ func (nfh *FunctionHandler) UploadFunction(w http.ResponseWriter, r *http.Reques
 // @Param id path string true "Function ID"
 // @Param config formData string true "JSON configuration data"
 // @Success 200 {object} data.FunctionEntity "Function updated successfully"
-// @Failure 400 {string} string "Bad Request: Invalid ID or data"
-// @Failure 404 {string} string "Not Found: Function not found"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 400 {object} utils.ErrorResponse "Bad Request"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /function/{id} [put]
 func (nfh *FunctionHandler) UpdateFunction(w http.ResponseWriter, r *http.Request) {
 
@@ -74,33 +74,33 @@ func (nfh *FunctionHandler) UpdateFunction(w http.ResponseWriter, r *http.Reques
 	err := json.Unmarshal([]byte(configData), &config)
 	if err != nil {
 		nfh.log.Error("Error unmarshaling config json", err)
-		http.Error(w, "Unable to parse config json", http.StatusBadRequest)
+		utils.HandleBadRequest(w, fmt.Errorf("error unmarshling config json: %v", err))
+		return
 	}
 
 	externalId, err := getIdFromUrl(r.URL)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.HandleBadRequest(w, fmt.Errorf("error parsing externalId from URL"))
 		return
 	}
 
 	res, err := nfh.service.UpdateConfig(externalId, config)
 	if err != nil {
-		nfh.log.Error("updating config failed with error: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		nfh.log.Error("error updating config for id '%s': ", externalId, err)
+		utils.HandleCustomErrors(w, err)
 		return
 	}
 
 	jsonResponse, err := json.Marshal(res)
 	if err != nil {
 		nfh.log.Error("marshaling response failed with error: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.HandleInternalError(w, fmt.Errorf("error marshalling response json: %v", err))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jsonResponse)
-
 }
 
 // @Summary List all functions
@@ -108,19 +108,19 @@ func (nfh *FunctionHandler) UpdateFunction(w http.ResponseWriter, r *http.Reques
 // @Tags Functions
 // @Produce application/json
 // @Success 200 {array} data.FunctionEntity "List of all functions"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /function [get]
 func (nfh *FunctionHandler) ListFunctions(w http.ResponseWriter, r *http.Request) {
 	functions, err := nfh.service.GetAllActiveFunctions()
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.HandleCustomErrors(w, err)
 		return
 	}
 
 	jsonResponse, err := json.Marshal(functions)
 	if err != nil {
 		nfh.log.Error("Error marshaling functions to JSON: ", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.HandleInternalError(w, fmt.Errorf("error marshalling response json: %v", err))
 		return
 	}
 
@@ -135,22 +135,21 @@ func (nfh *FunctionHandler) ListFunctions(w http.ResponseWriter, r *http.Request
 // @Produce application/json
 // @Param id path string true "Function ID"
 // @Success 204 {string} string "Function deleted successfully"
-// @Failure 400 {string} string "Bad Request: Invalid ID"
-// @Failure 404 {string} string "Not Found: Function not found"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 400 {object} utils.ErrorResponse "Bad Request"
+// @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
 // @Router /function/{id} [delete]
 func (nfh *FunctionHandler) DeleteFunction(w http.ResponseWriter, r *http.Request) {
 
 	externalId, err := getIdFromUrl(r.URL)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.HandleBadRequest(w, fmt.Errorf("error parsing externalId from URL"))
 		return
 	}
 
 	err = nfh.service.DeleteFunction(externalId)
 	if err != nil {
 		nfh.log.Error("Failed to delete function: ", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.HandleCustomErrors(w, err)
 		return
 	}
 
@@ -170,11 +169,8 @@ func getIdFromUrl(url *url.URL) (string, error) {
 	externalId := pathParts[4] // The forth part should be the ID
 
 	if externalId == "" {
-		// http.Error(w, "Invalid function ID", http.StatusBadRequest)
-		// return
 		return "", fmt.Errorf("Invalid function ID")
 	}
 
 	return externalId, nil
-
 }
