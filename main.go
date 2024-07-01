@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +18,7 @@ import (
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/service"
 	"github.com/spf13/afero"
+	"go.uber.org/zap/zapcore"
 )
 
 // @title Jambda - Serverless framework
@@ -31,7 +31,7 @@ import (
 // @host localhost:8080
 // @BasePath /v1/api
 func main() {
-	logger := logging.NewLogger(false, slog.LevelDebug.Level())
+	logger := logging.NewLogger(false, zapcore.DebugLevel)
 
 	fs := afero.NewOsFs()
 
@@ -52,9 +52,11 @@ func main() {
 
 	// Setup services
 	configValidator := service.NewConfigValidator(logger)
-
 	functionRepo := repository.NewFunctionRepository(db)
+
 	fileService := service.NewFileService(functionRepo, logger, fs, *configValidator)
+	gatewayService := service.NewGatewayService(logger)
+	functionService := service.NewFunctionService(functionRepo, logger, *fileService, *configValidator)
 
 	dockerService := service.NewDockerService(logger, *functionRepo)
 
@@ -65,11 +67,10 @@ func main() {
 	// Setup routes
 
 	// File routes
-	fileHandler := handlers.NewFileHandler(logger, *fileService)
-	routes.NewFileRoutes(router, logger, *fileHandler, loggerMw)
+	fileHandler := handlers.NewFunctionHandler(logger, *functionService)
+	routes.NewFunctionRoutes(router, logger, *fileHandler, loggerMw)
 
 	// Gateway routes
-	gatewayService := service.NewGatewayService(logger)
 	gatewayHandler := handlers.NewGatewayHandler(logger, *gatewayService)
 	routes.NewGatewayRoutes(router, logger, *gatewayHandler, loggerMw, dockerMw)
 

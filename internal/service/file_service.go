@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/jwtly10/jambda/api/data"
+	"github.com/jwtly10/jambda/internal/errors"
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/repository"
 	"github.com/jwtly10/jambda/internal/utils"
@@ -42,43 +43,47 @@ func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity
 	err := json.Unmarshal([]byte(configData), &config)
 	if err != nil {
 		fs.log.Error("Error unmarshaling config json: ", err)
-		return &data.FunctionEntity{}, err
+		return nil, errors.NewValidationError(fmt.Sprintf("error unmarshaling config json: %v", err))
 	}
 
-	// Validate and store config
 	fs.log.Infof("Validating uploaded config for '%s'", genId)
 	err = fs.cv.ValidateConfig(config)
 	if err != nil {
-		return &data.FunctionEntity{}, err
+		fs.log.Error("Config validation failed with error: ", err)
+		return nil, errors.NewValidationError(fmt.Sprintf("error validating config json: %v", err))
 	}
 
-	fs.log.Infof("Processing file for jambda function  %s", genId)
+	fs.log.Infof("Processing file for jambda function '%s'", genId)
 	r.ParseMultipartForm(10 << 20) // Limit upload size 10MB
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		return &data.FunctionEntity{}, fmt.Errorf("error retrieving the file from request: %v", err)
+		return nil, errors.NewInternalError(fmt.Sprintf("error retrieving the file from request: %v", err))
 	}
 	defer file.Close()
 
 	// Validate it's a zip file
 	if !fs.isValidZipFile(file) {
-		return &data.FunctionEntity{}, fmt.Errorf("file is not a valid zip archive")
+		return nil, errors.NewValidationError("uploaded file is not a valid zip archive")
 	}
 
-	// Extract, validate and save uploaded binary
 	err = fs.handleFile(genId, file)
 	if err != nil {
-		return &data.FunctionEntity{}, err
+		return nil, errors.NewValidationError(fmt.Sprintf("error unpacking and extracting binary: %v", err))
 	}
 
-	return fs.repo.SaveFunction(genId, *config)
+	fileEntity, err := fs.repo.SaveFunction(genId, *config)
+	if err != nil {
+		return nil, errors.NewInternalError(fmt.Sprintf("error saving function to db: %v", err))
+	}
+
+	return fileEntity, nil
 }
 
 func (fs *FileService) IsValidExternalId(functionId string) bool {
 	fileEntity, err := fs.repo.GetFunctionEntityFromExternalId(functionId)
 	if err != nil {
-		fs.log.Error("error getting file meta data from external id", err)
+		fs.log.Error("Error getting file meta data from external id: ", err)
 		return false
 	}
 
@@ -122,6 +127,7 @@ func (fs *FileService) handleFile(genId string, file multipart.File) error {
 	return fs.extractAndValidateZip(tmpFile.Name(), genId)
 }
 
+// Validating the executable name
 func (fs *FileService) extractAndValidateZip(zipPath, genId string) error {
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -132,7 +138,7 @@ func (fs *FileService) extractAndValidateZip(zipPath, genId string) error {
 	for _, f := range zipReader.File {
 		fs.log.Infof("Found file %s", f.Name)
 		// TODO: More file validation, support jars/python scripts
-		if f.Name == "bootstrap" && f.FileInfo().Mode().IsRegular() {
+		if (f.Name == "bootstrap" || f.Name == "bootstrap.jar") && f.FileInfo().Mode().IsRegular() {
 			extractPath := filepath.Join("binaries", genId, f.Name)
 			if err := fs.extractFile(f, extractPath); err != nil {
 				return err
@@ -164,7 +170,7 @@ func (fs *FileService) extractFile(f *zip.File, outputPath string) error {
 
 	// Set the output file to be executable
 	if err := os.Chmod(outputPath, 0755); err != nil {
-		fs.log.Errorf("Failed to set '%s' as executable: %s", outputPath, err)
+		fs.log.Errorf("Failed to set '%s' as executable: %v", outputPath, err)
 		return err
 	}
 

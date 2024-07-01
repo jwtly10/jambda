@@ -24,7 +24,19 @@ func NewGatewayRoutes(router api.AppRouter, l logging.Logger, h handlers.Gateway
 
 	gatewayHandler := http.HandlerFunc(routes.handlers.ProxyToInstance)
 	router.Post(
-		BASE_PATH+"/function/{id}/*",
+		BASE_PATH+"/execute/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
+	router.Get(
+		BASE_PATH+"/execute/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
+	router.Put(
+		BASE_PATH+"/execute/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
+	router.Delete(
+		BASE_PATH+"/execute/{id}/*",
 		middleware.Chain(gatewayHandler, mws...),
 	)
 

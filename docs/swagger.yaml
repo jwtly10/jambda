@@ -2,8 +2,6 @@ basePath: /v1/api
 definitions:
   data.FunctionConfig:
     properties:
-      created_at:
-        type: string
       env_vars:
         additionalProperties:
           type: string
@@ -15,8 +13,6 @@ definitions:
       trigger:
         type: string
       type:
-        type: string
-      updated_at:
         type: string
     type: object
   data.FunctionEntity:
@@ -34,6 +30,13 @@ definitions:
       updated_at:
         type: string
     type: object
+  utils.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -43,7 +46,146 @@ info:
   title: Jambda - Serverless framework
   version: "0.1"
 paths:
-  /file/upload:
+  /execute/{id}/:
+    delete:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Method
+        passed to instance forwarded from req. Middleware figures out the instance
+        URL to proxy the request to, based on ExternalId. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Make request to a REST function
+      tags:
+      - Executions
+    get:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Method
+        passed to instance forwarded from req. Middleware figures out the instance
+        URL to proxy the request to, based on ExternalId. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Make request to a REST function
+      tags:
+      - Executions
+    post:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Method
+        passed to instance forwarded from req. Middleware figures out the instance
+        URL to proxy the request to, based on ExternalId. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Make request to a REST function
+      tags:
+      - Executions
+    put:
+      consumes:
+      - text/plain
+      description: Proxies requests to docker instance running executable. Method
+        passed to instance forwarded from req. Middleware figures out the instance
+        URL to proxy the request to, based on ExternalId. Returns proxied response.
+      parameters:
+      - description: External ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: Request successfully proxied and processed
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Make request to a REST function
+      tags:
+      - Executions
+  /function:
+    get:
+      description: Retrieves a list of all function entities stored in the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all functions
+          schema:
+            items:
+              $ref: '#/definitions/data.FunctionEntity'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: List all functions
+      tags:
+      - Functions
     post:
       consumes:
       - multipart/form-data
@@ -70,42 +212,72 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Upload and process a file
       tags:
-      - files
-  /function/{id}/:
-    post:
-      consumes:
-      - text/plain
-      description: Proxies requests to docker instance running executable. Middleware
-        figures out the instance URL to proxy the request to. Returns proxied response.
+      - Functions
+  /function/{id}:
+    delete:
+      description: Deletes a specific function entity identified by its ID.
       parameters:
-      - description: External ID
+      - description: Function ID
         in: path
         name: id
         required: true
         type: string
       produces:
-      - '*/*'
+      - application/json
       responses:
-        "200":
-          description: Request successfully proxied and processed
+        "204":
+          description: Function deleted successfully
           schema:
             type: string
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            type: string
-      summary: Make request to a REST function
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Delete a function
       tags:
-      - functions
+      - Functions
+    put:
+      consumes:
+      - multipart/form-data
+      description: Updates an existing function config by submitting new config data
+      parameters:
+      - description: Function ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: JSON configuration data
+        in: formData
+        name: config
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Function updated successfully
+          schema:
+            $ref: '#/definitions/data.FunctionEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Update an existing function config
+      tags:
+      - Functions
 swagger: "2.0"

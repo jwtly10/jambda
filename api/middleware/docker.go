@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/service"
+	"github.com/jwtly10/jambda/internal/utils"
 )
 
 type DockerMiddleware struct {
@@ -17,23 +19,21 @@ type DockerMiddleware struct {
 func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get the functionId from the request
-		functionId := strings.TrimPrefix(r.URL.Path, "/v1/api/function/")
+		functionId := strings.TrimPrefix(r.URL.Path, "/v1/api/execute/")
 		functionId = strings.SplitN(functionId, "/", 2)[0]
 
 		// 1. Validate the function id by getting the config for the function
 		config, err := dmw.Ds.GetFunctionConfiguration(functionId)
 		if err != nil {
-			dmw.Log.Errorf("failed to get function config for id: %s %v", functionId, err)
-			// TODO FIX ERROR MESSAGING
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			dmw.Log.Errorf("Failed to get function config for id: %s %v", functionId, err)
+			utils.HandleCustomErrors(w, err)
 			return
 		}
 
 		if config.Trigger != "http" {
-			dmw.Log.Errorf("Unsupport http trigger: %s", config.Trigger)
-			http.Error(w, "Http trigger not supported", http.StatusBadRequest)
+			dmw.Log.Errorf("Unsupported http trigger: '%s'", config.Trigger)
+			utils.HandleValidationError(w, fmt.Errorf("Function config trigger '%s' is not supported", config.Trigger))
 			return
-
 		}
 
 		ctx := context.Background()
@@ -44,12 +44,13 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			containerId, err := dmw.Ds.StartContainer(ctx, r, functionId, *config)
 			if err != nil {
 				dmw.Log.Errorf("Error starting container: %v", err)
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				utils.HandleCustomErrors(w, err)
 				return
 			}
 
 			containerUrl, err := dmw.Ds.GetContainerUrl(ctx, containerId, *config)
 			if err != nil {
+				utils.HandleCustomErrors(w, err)
 				return
 			}
 
@@ -65,7 +66,7 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			// }
 
 			// Pass everything to the handler, including the url of the running container
-			dmw.Log.Infof("Determined container '%s' url : '%s", containerId, containerUrl)
+			dmw.Log.Infof("Determined container '%s' url : '%s'", containerId, containerUrl)
 			r = r.WithContext(context.WithValue(r.Context(), "containerUrl", containerUrl))
 			next.ServeHTTP(w, r)
 		case "SINGLE":
@@ -75,9 +76,9 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 			http.Error(w, "Not implemented yet", http.StatusNotImplemented)
 			return
 		default:
+			utils.HandleBadRequest(w, fmt.Errorf("Unsupported function type '%s'", config.Type))
 			http.Error(w, "Unsupported function type", http.StatusBadRequest)
 			return
 		}
-
 	})
 }

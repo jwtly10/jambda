@@ -18,7 +18,204 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/file/upload": {
+        "/execute/{id}/": {
+            "get": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/function": {
+            "get": {
+                "description": "Retrieves a list of all function entities stored in the system.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "List all functions",
+                "responses": {
+                    "200": {
+                        "description": "List of all functions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/data.FunctionEntity"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a \"bootstrap\" executable. Returns ExternalId",
                 "consumes": [
@@ -28,7 +225,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "Functions"
                 ],
                 "summary": "Upload and process a file",
                 "parameters": [
@@ -57,43 +254,89 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/function/{id}/": {
-            "post": {
-                "description": "Proxies requests to docker instance running executable. Middleware figures out the instance URL to proxy the request to. Returns proxied response.",
+        "/function/{id}": {
+            "put": {
+                "description": "Updates an existing function config by submitting new config data",
                 "consumes": [
-                    "text/plain"
+                    "multipart/form-data"
                 ],
                 "produces": [
-                    "*/*"
+                    "application/json"
                 ],
                 "tags": [
-                    "functions"
+                    "Functions"
                 ],
-                "summary": "Make request to a REST function",
+                "summary": "Update an existing function config",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "External ID",
+                        "description": "Function ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JSON configuration data",
+                        "name": "config",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Function updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/data.FunctionEntity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a specific function entity identified by its ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Functions"
+                ],
+                "summary": "Delete a function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Function ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Request successfully proxied and processed",
+                    "204": {
+                        "description": "Function deleted successfully",
                         "schema": {
                             "type": "string"
                         }
@@ -101,13 +344,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/utils.ErrorResponse"
                         }
                     }
                 }
@@ -118,9 +361,6 @@ const docTemplate = `{
         "data.FunctionConfig": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "env_vars": {
                     "type": "object",
                     "additionalProperties": {
@@ -137,9 +377,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }
@@ -163,6 +400,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "utils.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
                     "type": "string"
                 }
             }

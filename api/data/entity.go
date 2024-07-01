@@ -12,11 +12,9 @@ type FunctionEntity struct {
 }
 
 type FunctionConfig struct {
-	Trigger   string            `json:"trigger"`
-	Image     string            `json:"image"`
-	Type      string            `json:"type"`
-	Port      *int              `json:"port,omitempty"`
-	EnvVars   map[string]string `json:"env_vars,omitempty"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	Trigger string            `json:"trigger"`
+	Image   string            `json:"image"`
+	Type    string            `json:"type"`
+	Port    *int              `json:"port,omitempty"`
+	EnvVars map[string]string `json:"env_vars,omitempty"`
 }
