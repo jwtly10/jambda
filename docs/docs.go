@@ -28,7 +28,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "Function Submit"
                 ],
                 "summary": "Upload and process a file",
                 "parameters": [
@@ -70,8 +70,8 @@ const docTemplate = `{
             }
         },
         "/function/{id}/": {
-            "post": {
-                "description": "Proxies requests to docker instance running executable. Middleware figures out the instance URL to proxy the request to. Returns proxied response.",
+            "get": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
                 "consumes": [
                     "text/plain"
                 ],
@@ -79,7 +79,133 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "tags": [
-                    "functions"
+                    "Jambda Function Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Jambda Function Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Jambda Function Executions"
+                ],
+                "summary": "Make request to a REST function",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "External ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Request successfully proxied and processed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "Jambda Function Executions"
                 ],
                 "summary": "Make request to a REST function",
                 "parameters": [

@@ -27,6 +27,18 @@ func NewGatewayRoutes(router api.AppRouter, l logging.Logger, h handlers.Gateway
 		BASE_PATH+"/function/{id}/*",
 		middleware.Chain(gatewayHandler, mws...),
 	)
+	router.Get(
+		BASE_PATH+"/function/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
+	router.Put(
+		BASE_PATH+"/function/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
+	router.Delete(
+		BASE_PATH+"/function/{id}/*",
+		middleware.Chain(gatewayHandler, mws...),
+	)
 
 	return routes
 }

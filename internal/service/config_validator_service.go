@@ -31,9 +31,9 @@ func (cv *ConfigValidator) ValidateConfig(config *data.FunctionConfig) error {
 	}
 
 	// Validate Image (example: must not be empty)
-	validImages := map[string]bool{"golang:1.22": true}
+	validImages := map[string]bool{"golang:1.22": true, "openjdk:21-jdk": true, "openjdk:17-jdk": true}
 	if _, ok := validImages[config.Image]; !ok {
-		return fmt.Errorf("invalid image '%s'; must be 'golang:1.22'", config.Trigger)
+		return fmt.Errorf("invalid image '%s'; must be 'golang:1.22' or 'openjdk:21-jdk' or 'openjdk:17-jdk'", config.Image)
 	}
 
 	// Optional: Validate Port

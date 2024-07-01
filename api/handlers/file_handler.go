@@ -22,7 +22,7 @@ func NewFileHandler(l logging.Logger, fs service.FileService) *FileHandler {
 
 // @Summary Upload and process a file
 // @Description Uploads a zip file, validates its contents, and processes it in storage. The zip file must contain a "bootstrap" executable. Returns ExternalId
-// @Tags files
+// @Tags Function Submit
 // @Accept multipart/form-data
 // @Produce application/json
 // @Param upload formData file true "File to upload"

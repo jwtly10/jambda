@@ -24,8 +24,8 @@ func NewGatewayHandler(l logging.Logger, gs service.GatewayService) *GatewayHand
 }
 
 // @Summary Make request to a REST function
-// @Description Proxies requests to docker instance running executable. Middleware figures out the instance URL to proxy the request to. Returns proxied response.
-// @Tags functions
+// @Description Proxies requests to docker instance running executable. Method passed to instance forwarded from req. Middleware figures out the instance URL to proxy the request to, based on ExternalId. Returns proxied response.
+// @Tags Jambda Function Executions
 // @Accept plain
 // @Produce */*
 // @Param id path string true "External ID"
@@ -33,6 +33,9 @@ func NewGatewayHandler(l logging.Logger, gs service.GatewayService) *GatewayHand
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /function/{id}/ [post]
+// @Router /function/{id}/ [get]
+// @Router /function/{id}/ [put]
+// @Router /function/{id}/ [delete]
 func (gwh *GatewayHandler) ProxyToInstance(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the base URL from the context, set by docker middleware
 	baseContainerUrl, ok := r.Context().Value("containerUrl").(string)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -73,13 +74,33 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 	if !containerFound {
 		ds.log.Infof("No container found for id %s. Creating one now.", functionId)
 		// TODO dont hard code path
-		binaryPath := fmt.Sprintf("%s/binaries/%s/bootstrap", "/Users/personal/Projects/jambda", functionId)
+		var runCmd []string
+		var mountCmd string
+		var binaryPath string
+		if strings.Contains(config.Image, "golang") {
+			// This is a golang binary
+			// runCmd = "/bootstrap"
+			runCmd = []string{"/bootstrap"}
+			mountCmd = ":/bootstrap:ro"
+			binaryPath = fmt.Sprintf("%s/binaries/%s/bootstrap", "/Users/personal/Projects/jambda", functionId)
+		}
+
+		if strings.Contains(config.Image, "jdk") {
+			// This is a java binary
+			runCmd = []string{"/bin/sh", "-c", "java -jar /bootstrap.jar"}
+			mountCmd = ":/bootstrap.jar:ro"
+			binaryPath = fmt.Sprintf("%s/binaries/%s/bootstrap.jar", "/Users/personal/Projects/jambda", functionId)
+		}
+
+		ds.log.Infof("Running command on container : '%s'", runCmd)
+		ds.log.Infof("Mounting command on container : '%s'", mountCmd)
+		ds.log.Infof("Binary Path is : '%s'", binaryPath)
 
 		// Create and start the container
 		cInstance, err := ds.cli.ContainerCreate(ctx, &container.Config{
 			Image: config.Image,
 			// TODO: Allow custom cmd params?
-			Cmd: []string{"/bootstrap"},
+			Cmd: runCmd,
 			Labels: map[string]string{
 				"function_id": functionId,
 			},
@@ -88,7 +109,7 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 			},
 		}, &container.HostConfig{
 			Binds: []string{
-				binaryPath + ":/bootstrap:ro",
+				binaryPath + mountCmd,
 			},
 			PortBindings: nat.PortMap{
 				nat.Port(fmt.Sprintf("%d/tcp", *config.Port)): []nat.PortBinding{

@@ -122,6 +122,7 @@ func (fs *FileService) handleFile(genId string, file multipart.File) error {
 	return fs.extractAndValidateZip(tmpFile.Name(), genId)
 }
 
+// Validating the executable name
 func (fs *FileService) extractAndValidateZip(zipPath, genId string) error {
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -132,7 +133,7 @@ func (fs *FileService) extractAndValidateZip(zipPath, genId string) error {
 	for _, f := range zipReader.File {
 		fs.log.Infof("Found file %s", f.Name)
 		// TODO: More file validation, support jars/python scripts
-		if f.Name == "bootstrap" && f.FileInfo().Mode().IsRegular() {
+		if (f.Name == "bootstrap" || f.Name == "bootstrap.jar") && f.FileInfo().Mode().IsRegular() {
 			extractPath := filepath.Join("binaries", genId, f.Name)
 			if err := fs.extractFile(f, extractPath); err != nil {
 				return err
