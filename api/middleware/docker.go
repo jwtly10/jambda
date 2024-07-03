@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jwtly10/jambda/internal/logging"
 	"github.com/jwtly10/jambda/internal/service"
@@ -48,22 +49,41 @@ func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 				return
 			}
 
-			containerUrl, err := dmw.Ds.GetContainerUrl(ctx, containerId, *config)
+			// We need to get the url from the container that has been started (or is already running)
+			// However, it can take some time for docker to spin up the process, so we don't want to proxy the request
+			// If the container is not running
+			// This logic tries for max 5 seconds to check the container is running.
+			var containerUrl string
+			timeout := time.Now().Add(5 * time.Second)
+			for time.Now().Before(timeout) {
+				containerUrl, err = dmw.Ds.GetContainerUrl(ctx, containerId, *config)
+				if err == nil {
+					// If there is no error, that means we got the container url
+					// So we can continue with the health check
+					break
+				}
+				dmw.Log.Warn("Url check failed. Retrying.")
+				time.Sleep(2 * time.Second)
+			}
 			if err != nil {
-				utils.HandleCustomErrors(w, err)
+				// We didn't get the container URL!
+				dmw.Log.Error("Error getting container URL : %v", err)
+				utils.HandleInternalError(w, fmt.Errorf("unable to get container url! The container must not have been ready in time %v", err))
 				return
 			}
 
-			// TODO we should run health check on this container, for now just wait a few seconds
-			// The current issue is we cannot get any ports until service is running. So we need to
-			// Spend a few tries to get the port/url
-			// dmw.Log.Infof("Running health check!!")
-			// err = dmw.Ds.HealthCheckContainer(ctx, containerId, *config)
-			// if err != nil {
-			// 	dmw.Log.Errorf("%v", err)
-			// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
-			// 	return
-			// }
+			// Otherwise we can continue with the health check
+			// This also attempts to wait, and retry the health check.
+			// As this is not a problem within docker, but the underlying function.
+			// We will wait up to 30 seconds
+			// Rest platforms like springboot can take a few seconds to initialise.
+			dmw.Log.Infof("Running health check!!")
+			err = dmw.Ds.HealthCheckContainer(ctx, containerId, *config)
+			if err != nil {
+				dmw.Log.Errorf("Health check failed %v", err)
+				utils.HandleCustomErrors(w, err)
+				return
+			}
 
 			// Pass everything to the handler, including the url of the running container
 			dmw.Log.Infof("Determined container '%s' url : '%s'", containerId, containerUrl)
