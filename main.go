@@ -38,17 +38,25 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		logger.Fatal("Failed to load configuration:", err)
+		panic("Unable to load config")
 	}
 
 	db, err := db.ConnectDB(cfg)
 	if err != nil {
 		logger.Fatal("Database connection failed:", err)
+		panic("Unable to connect to database")
 	}
 	logger.Info("Database connected")
 
 	// Init Router
 	router := api.NewAppRouter(logger)
+
+	// Setup global middleware
+	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
+	router.Use(loggerMw)
+
 	router.SetupSwagger()
+	router.ServeStaticFiles("./jambda-frontend/dist")
 
 	// Setup services
 	configValidator := service.NewConfigValidator(logger)
@@ -60,19 +68,18 @@ func main() {
 
 	dockerService := service.NewDockerService(logger, *functionRepo)
 
-	// Setup middlewares
-	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
+	// Setup specific middlewares
 	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
 
 	// Setup routes
 
 	// File routes
 	fileHandler := handlers.NewFunctionHandler(logger, *functionService)
-	routes.NewFunctionRoutes(router, logger, *fileHandler, loggerMw)
+	routes.NewFunctionRoutes(router, logger, *fileHandler)
 
 	// Gateway routes
 	gatewayHandler := handlers.NewGatewayHandler(logger, *gatewayService)
-	routes.NewGatewayRoutes(router, logger, *gatewayHandler, loggerMw, dockerMw)
+	routes.NewGatewayRoutes(router, logger, *gatewayHandler, dockerMw)
 
 	// Start server
 	server := &http.Server{

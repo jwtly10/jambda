@@ -232,7 +232,7 @@ const docTemplate = `{
                     {
                         "type": "file",
                         "description": "File to upload",
-                        "name": "upload",
+                        "name": "zip",
                         "in": "formData",
                         "required": true
                     },
@@ -240,6 +240,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "JSON configuration data",
                         "name": "config",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Display name of the function",
+                        "name": "name",
                         "in": "formData",
                         "required": true
                     }
@@ -395,6 +402,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "state": {
                     "type": "string"

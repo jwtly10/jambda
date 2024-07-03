@@ -37,6 +37,11 @@ func NewFileService(repo repository.IFunctionRepository, log logging.Logger, fs 
 func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity, error) {
 	genId := utils.GenerateShortID()
 
+	name := r.FormValue("name")
+	if name == "" {
+		return nil, errors.NewValidationError(fmt.Sprintf("Missing name from form data"))
+	}
+
 	// Get config from request
 	configData := r.FormValue("config")
 	var config *data.FunctionConfig
@@ -56,7 +61,7 @@ func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity
 	fs.log.Infof("Processing file for jambda function '%s'", genId)
 	r.ParseMultipartForm(10 << 20) // Limit upload size 10MB
 
-	file, _, err := r.FormFile("upload")
+	file, _, err := r.FormFile("zip")
 	if err != nil {
 		return nil, errors.NewInternalError(fmt.Sprintf("error retrieving the file from request: %v", err))
 	}
@@ -72,7 +77,7 @@ func (fs *FileService) ProcessNewFunction(r *http.Request) (*data.FunctionEntity
 		return nil, errors.NewValidationError(fmt.Sprintf("error unpacking and extracting binary: %v", err))
 	}
 
-	fileEntity, err := fs.repo.SaveFunction(genId, *config)
+	fileEntity, err := fs.repo.SaveFunction(genId, name, *config)
 	if err != nil {
 		return nil, errors.NewInternalError(fmt.Sprintf("error saving function to db: %v", err))
 	}

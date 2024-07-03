@@ -25,6 +25,8 @@ definitions:
         type: string
       id:
         type: integer
+      name:
+        type: string
       state:
         type: string
       updated_at:
@@ -194,12 +196,17 @@ paths:
       parameters:
       - description: File to upload
         in: formData
-        name: upload
+        name: zip
         required: true
         type: file
       - description: JSON configuration data
         in: formData
         name: config
+        required: true
+        type: string
+      - description: Display name of the function
+        in: formData
+        name: name
         required: true
         type: string
       produces:

@@ -30,6 +30,11 @@ func (r *AppRouter) handle(pattern string, handler http.Handler) {
 	r.ServeMux.Handle(pattern, handler)
 }
 
+func (r *AppRouter) ServeStaticFiles(path string) {
+	fs := http.FileServer(http.Dir(path))
+	r.handle("/", fs)
+}
+
 func (r *AppRouter) SetupSwagger() {
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 }
