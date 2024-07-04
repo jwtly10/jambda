@@ -67,9 +67,11 @@ func main() {
 	functionService := service.NewFunctionService(functionRepo, logger, *fileService, *configValidator)
 
 	dockerService := service.NewDockerService(logger, *functionRepo)
+	kubernetesService := service.NewKubernetesService(logger)
 
 	// Setup specific middlewares
-	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
+	dockerMw := &middleware.DockerMiddleware{Log: logger, Ks: *kubernetesService, Ds: *dockerService}
+	// dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
 
 	// Setup routes
 

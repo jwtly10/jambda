@@ -1,12 +1,18 @@
 package service
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -33,6 +39,94 @@ func NewDockerService(log logging.Logger, fr repository.FunctionRepository) *Doc
 		cli: cli,
 		fr:  fr,
 	}
+}
+
+func (ds *DockerService) BuildDockerImage(ctx context.Context, functionId string, binaryPath string, config *data.FunctionConfig) error {
+	// Create a tarball with the file and Dockerfile in memory
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
+
+	// Add the file to the tarball
+	file, err := os.Open(binaryPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	header := &tar.Header{
+		Name: filepath.Base(binaryPath),
+		Size: fileInfo.Size(),
+	}
+	if err := tw.WriteHeader(header); err != nil {
+		return err
+	}
+	if _, err := io.Copy(tw, file); err != nil {
+		return err
+	}
+
+	var dockerfile string
+	if strings.Contains(config.Image, "jdk") {
+		// This is a golang binary
+		// runCmd = "/bootstrap"
+		// runCmd = []string{"/bootstrap"}
+		// mountCmd = ":/bootstrap:ro"
+		// binaryPath = fmt.Sprintf("%s/binaries/%s/bootstrap", "/Users/personal/Projects/jambda", functionId)
+		dockerfile = `
+        FROM ` + config.Image + `
+		COPY ` + filepath.Base(binaryPath) + ` /app.jar
+        ENTRYPOINT ["java", "-jar", "/app.jar"]
+        `
+	} else if strings.Contains(config.Image, "golang") {
+		// This is a java binary
+		// runCmd = []string{"/bin/sh", "-c", "java -jar /bootstrap.jar"}
+		// mountCmd = ":/bootstrap.jar:ro"
+		// binaryPath = fmt.Sprintf("%s/binaries/%s/bootstrap.jar", "/Users/personal/Projects/jambda", functionId)
+		dockerfile = `
+        FROM ` + config.Image + `
+		COPY ` + filepath.Base(binaryPath) + ` /app
+        ENTRYPOINT ["/app"]
+        `
+	} else {
+		return errors.NewValidationError(fmt.Sprintf("unsupported image type %s", config.Image))
+	}
+
+	// Add the Dockerfile to the tarball
+	dockerFileHeader := &tar.Header{
+		Name: "Dockerfile",
+		Size: int64(len(dockerfile)),
+	}
+	if err := tw.WriteHeader(dockerFileHeader); err != nil {
+		return err
+	}
+	if _, err := tw.Write([]byte(dockerfile)); err != nil {
+		return err
+	}
+
+	imageName := "local/app:" + functionId
+	buildOptions := types.ImageBuildOptions{
+		Tags: []string{imageName},
+	}
+
+	if ds.cli == nil {
+		return fmt.Errorf("Docker client is not initialized")
+	}
+
+	buildContext := bytes.NewReader(buf.Bytes())
+	resp, err := ds.cli.ImageBuild(ctx, buildContext, buildOptions)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Print the build output
+	_, err = io.Copy(os.Stdout, resp.Body)
+	return err
 }
 
 func (ds *DockerService) GetFunctionConfiguration(externalId string) (*data.FunctionConfig, error) {

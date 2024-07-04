@@ -12,3 +12,16 @@ Jambda is a custom, self-hosted serverless framework designed to execute custom 
 
 - Automatic scaling
 - Security (HTTPS/Basic Auth)
+
+k8 commands
+
+need to be using minikubes env
+eval $(minikube docker-env)
+
+need to also start minikube 
+minikube start
+
+minikube service my-app-90314f32 --url 
+
+kubectl get service my-app-90314f32 --output='jsonpath="{.spec.ports[0].nodePort}"' 
+
