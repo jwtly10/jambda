@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/jwtly10/jambda/internal/logging"
@@ -20,8 +19,7 @@ type DockerMiddleware struct {
 func (dmw *DockerMiddleware) BeforeNext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get the functionId from the request
-		functionId := strings.TrimPrefix(r.URL.Path, "/v1/api/execute/")
-		functionId = strings.SplitN(functionId, "/", 2)[0]
+		functionId := utils.GetFunctionIdFromExecutePath(r)
 
 		// 1. Validate the function id by getting the config for the function
 		config, err := dmw.Ds.GetFunctionConfiguration(functionId)

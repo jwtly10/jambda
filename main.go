@@ -70,6 +70,7 @@ func main() {
 
 	// Setup specific middlewares
 	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
+	usageMw := &middleware.UsageMiddleware{Log: logger}
 
 	// Setup routes
 
@@ -79,7 +80,7 @@ func main() {
 
 	// Gateway routes
 	gatewayHandler := handlers.NewGatewayHandler(logger, *gatewayService)
-	routes.NewGatewayRoutes(router, logger, *gatewayHandler, dockerMw)
+	routes.NewGatewayRoutes(router, logger, *gatewayHandler, dockerMw, usageMw)
 
 	// Start server
 	server := &http.Server{
