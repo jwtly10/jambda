@@ -3,30 +3,21 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/jwtly10/jambda/internal/logging"
+	"github.com/jwtly10/jambda/internal/service"
 	"github.com/jwtly10/jambda/internal/utils"
 )
 
-// Struct to hold the request count
-type FunctionStats struct {
-	RequestCount int
-}
-
-// Global map and mutex to store function statistics
-var (
-	functionStats = make(map[string]*FunctionStats)
-	mu            sync.Mutex
-)
-
 type UsageMiddleware struct {
-	Log logging.Logger
+	log logging.Logger
+	rs  *service.RequestStatsService
 }
 
-func NewUsageMiddleware(log logging.Logger) *UsageMiddleware {
+func NewUsageMiddleware(log logging.Logger, rs *service.RequestStatsService) *UsageMiddleware {
 	return &UsageMiddleware{
-		Log: log,
+		log: log,
+		rs:  rs,
 	}
 }
 
@@ -38,18 +29,9 @@ func (umw *UsageMiddleware) BeforeNext(next http.Handler) http.Handler {
 			utils.HandleValidationError(w, fmt.Errorf("function ID is required"))
 		}
 
-		umw.Log.Infof("Incrementing request count for %s", functionId)
-		incrementRequestCount(functionId)
+		umw.log.Infof("Incrementing request count for %s", functionId)
+		umw.rs.IncrementRequestCount(functionId)
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func incrementRequestCount(functionID string) {
-	mu.Lock()
-	defer mu.Unlock()
-	if _, exists := functionStats[functionID]; !exists {
-		functionStats[functionID] = &FunctionStats{}
-	}
-	functionStats[functionID].RequestCount++
 }

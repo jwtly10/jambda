@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/jwtly10/jambda/api/data"
@@ -176,7 +177,7 @@ func (ds *DockerService) GetContainerUrl(ctx context.Context, containerId string
 	portBindings, ok := inspectData.NetworkSettings.Ports[portKey]
 	if !ok || len(portBindings) == 0 {
 		ds.log.Errorf("No port bindings are available for port %s", portKey)
-		return "", fmt.Errorf("No port bindings are available for port %s", portKey)
+		return "", fmt.Errorf("no port bindings are available for port %s", portKey)
 	}
 
 	assignedPort := portBindings[0].HostPort
@@ -186,4 +187,36 @@ func (ds *DockerService) GetContainerUrl(ctx context.Context, containerId string
 	}
 
 	return fmt.Sprintf("http://%s:%s", "localhost", assignedPort), nil
+}
+
+func (ds *DockerService) StopContainerForFunction(functionID string) {
+	ds.log.Infof("Stopping idle container for function '%s' ", functionID)
+
+	// Max wait for container stop is 10 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filterArgs := filters.NewArgs()
+	filterArgs.Add("label", fmt.Sprintf("function_id=%s", functionID))
+	containers, err := ds.cli.ContainerList(ctx, container.ListOptions{
+		All:     true,
+		Filters: filterArgs,
+	})
+	if err != nil {
+		ds.log.Errorf("Failed to list containers: %s", err)
+	}
+
+	ds.log.Infof("Number of containers: %d", len(containers))
+
+	for _, inContainer := range containers {
+		ds.log.Infof("Stopping Docker container for function: %s", functionID)
+		opts := container.StopOptions{
+			Timeout: nil,
+		}
+		if err := ds.cli.ContainerStop(ctx, inContainer.ID, opts); err != nil {
+			ds.log.Errorf("Failed to stop container %s: %s", inContainer.ID, err)
+		} else {
+			ds.log.Infof("Stopped container %s for function: %s", inContainer.ID, functionID)
+		}
+	}
 }

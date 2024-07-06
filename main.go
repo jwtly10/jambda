@@ -65,12 +65,20 @@ func main() {
 	fileService := service.NewFileService(functionRepo, logger, fs, *configValidator)
 	gatewayService := service.NewGatewayService(logger)
 	functionService := service.NewFunctionService(functionRepo, logger, *fileService, *configValidator)
-
 	dockerService := service.NewDockerService(logger, *functionRepo)
 
+	requestStatsService := service.NewRequestStatsService(logger, *dockerService, *functionService)
+	// This spins up a background check to scale down up any unused containers
+	go func() {
+		for {
+			time.Sleep(5 * time.Minute)
+			requestStatsService.ScaleDownUnusedContainers(30 * time.Minute)
+		}
+	}()
+
 	// Setup specific middlewares
-	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
-	usageMw := &middleware.UsageMiddleware{Log: logger}
+	dockerMw := middleware.NewDockerMiddleware(logger, *dockerService)
+	usageMw := middleware.NewUsageMiddleware(logger, requestStatsService)
 
 	// Setup routes
 
