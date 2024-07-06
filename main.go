@@ -38,17 +38,25 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		logger.Fatal("Failed to load configuration:", err)
+		panic("Unable to load config")
 	}
 
 	db, err := db.ConnectDB(cfg)
 	if err != nil {
 		logger.Fatal("Database connection failed:", err)
+		panic("Unable to connect to database")
 	}
 	logger.Info("Database connected")
 
 	// Init Router
 	router := api.NewAppRouter(logger)
+
+	// Setup global middleware
+	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
+	router.Use(loggerMw)
+
 	router.SetupSwagger()
+	router.ServeStaticFiles("./jambda-frontend/dist")
 
 	// Setup services
 	configValidator := service.NewConfigValidator(logger)
@@ -57,22 +65,30 @@ func main() {
 	fileService := service.NewFileService(functionRepo, logger, fs, *configValidator)
 	gatewayService := service.NewGatewayService(logger)
 	functionService := service.NewFunctionService(functionRepo, logger, *fileService, *configValidator)
-
 	dockerService := service.NewDockerService(logger, *functionRepo)
 
-	// Setup middlewares
-	loggerMw := &middleware.RequestLoggerMiddleware{Log: logger}
-	dockerMw := &middleware.DockerMiddleware{Log: logger, Ds: *dockerService}
+	requestStatsService := service.NewRequestStatsService(logger, *dockerService, *functionService)
+	// This spins up a background check to scale down up any unused containers
+	go func() {
+		for {
+			time.Sleep(5 * time.Minute)
+			requestStatsService.ScaleDownUnusedContainers(30 * time.Minute)
+		}
+	}()
+
+	// Setup specific middlewares
+	dockerMw := middleware.NewDockerMiddleware(logger, *dockerService)
+	usageMw := middleware.NewUsageMiddleware(logger, requestStatsService)
 
 	// Setup routes
 
 	// File routes
 	fileHandler := handlers.NewFunctionHandler(logger, *functionService)
-	routes.NewFunctionRoutes(router, logger, *fileHandler, loggerMw)
+	routes.NewFunctionRoutes(router, logger, *fileHandler)
 
 	// Gateway routes
 	gatewayHandler := handlers.NewGatewayHandler(logger, *gatewayService)
-	routes.NewGatewayRoutes(router, logger, *gatewayHandler, loggerMw, dockerMw)
+	routes.NewGatewayRoutes(router, logger, *gatewayHandler, dockerMw, usageMw)
 
 	// Start server
 	server := &http.Server{

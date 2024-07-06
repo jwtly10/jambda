@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/jwtly10/jambda/api/data"
@@ -69,10 +70,6 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 					ds.log.Error("Failed to start container '%s': ", containerId, err)
 					return "", errors.NewDockerError(fmt.Sprintf("error starting docker container: %v", err))
 				}
-
-				// TODO. Implement health check here
-				ds.log.Infof("TODO: Simulating health check")
-				time.Sleep(2 * time.Second)
 			}
 			break
 		}
@@ -140,22 +137,17 @@ func (ds *DockerService) StartContainer(ctx context.Context, r *http.Request, fu
 			ds.log.Error("Failed to start container: ", err)
 			return "", errors.NewDockerError(fmt.Sprintf("error starting docker container: %v", err))
 		}
-
-		// TODO. Implement health check here
-		ds.log.Infof("TODO: Simulating health check")
-		time.Sleep(2 * time.Second)
 	}
 
 	return containerId, nil
 }
 
 func (ds *DockerService) HealthCheckContainer(ctx context.Context, containerId string, config data.FunctionConfig) error {
-	// Define a timeout for how long to wait for the container to become ready
 	timeout := time.Now().Add(30 * time.Second) // Wait up to 30 seconds
 
 	url, err := ds.GetContainerUrl(ctx, containerId, config)
 	if err != nil {
-		return fmt.Errorf("error inspecting container: %v", err)
+		return errors.NewDockerError(fmt.Sprintf("error inspecting container: %v", err))
 	}
 
 	for time.Now().Before(timeout) {
@@ -165,11 +157,11 @@ func (ds *DockerService) HealthCheckContainer(ctx context.Context, containerId s
 		}
 
 		// Wait a bit before checking again
-		ds.log.Warn("Error during health check: %v", err)
+		ds.log.Warn("Health check failed. Retrying.")
 		time.Sleep(2 * time.Second)
 	}
 
-	return fmt.Errorf("container did not become ready within the expected time")
+	return errors.NewDockerError(fmt.Sprintf("container did not become ready within the expected time"))
 }
 
 func (ds *DockerService) GetContainerUrl(ctx context.Context, containerId string, config data.FunctionConfig) (string, error) {
@@ -179,6 +171,52 @@ func (ds *DockerService) GetContainerUrl(ctx context.Context, containerId string
 		return "", err
 	}
 
-	assignedPort := inspectData.NetworkSettings.Ports[nat.Port(fmt.Sprintf("%d/tcp", *config.Port))][0].HostPort
+	portKey := nat.Port(fmt.Sprintf("%d/tcp", *config.Port))
+
+	// Force safe access to port bindings
+	portBindings, ok := inspectData.NetworkSettings.Ports[portKey]
+	if !ok || len(portBindings) == 0 {
+		ds.log.Errorf("No port bindings are available for port %s", portKey)
+		return "", fmt.Errorf("no port bindings are available for port %s", portKey)
+	}
+
+	assignedPort := portBindings[0].HostPort
+	if assignedPort == "" {
+		ds.log.Error("Assigned host port is empty")
+		return "", fmt.Errorf("assigned host port is empty for port '%s'", portKey)
+	}
+
 	return fmt.Sprintf("http://%s:%s", "localhost", assignedPort), nil
+}
+
+func (ds *DockerService) StopContainerForFunction(functionID string) {
+	ds.log.Infof("Stopping idle container for function '%s' ", functionID)
+
+	// Max wait for container stop is 10 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filterArgs := filters.NewArgs()
+	filterArgs.Add("label", fmt.Sprintf("function_id=%s", functionID))
+	containers, err := ds.cli.ContainerList(ctx, container.ListOptions{
+		All:     true,
+		Filters: filterArgs,
+	})
+	if err != nil {
+		ds.log.Errorf("Failed to list containers: %s", err)
+	}
+
+	ds.log.Infof("Number of containers: %d", len(containers))
+
+	for _, inContainer := range containers {
+		ds.log.Infof("Stopping Docker container for function: %s", functionID)
+		opts := container.StopOptions{
+			Timeout: nil,
+		}
+		if err := ds.cli.ContainerStop(ctx, inContainer.ID, opts); err != nil {
+			ds.log.Errorf("Failed to stop container %s: %s", inContainer.ID, err)
+		} else {
+			ds.log.Infof("Stopped container %s for function: %s", inContainer.ID, functionID)
+		}
+	}
 }

@@ -30,8 +30,9 @@ func NewFunctionHandler(l logging.Logger, fs service.FunctionService) *FunctionH
 // @Tags Functions
 // @Accept multipart/form-data
 // @Produce application/json
-// @Param upload formData file true "File to upload"
+// @Param zip formData file true "File to upload"
 // @Param config formData string true "JSON configuration data"
+// @Param name formData string true "Display name of the function"
 // @Success 201 {object} data.FunctionEntity "File uploaded and processed successfully"
 // @Failure 400 {object} utils.ErrorResponse "Bad Request"
 // @Failure 500 {object} utils.ErrorResponse "Internal Server Error"
@@ -78,13 +79,20 @@ func (nfh *FunctionHandler) UpdateFunction(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	name := r.FormValue("name")
+	if name == "" {
+		nfh.log.Error("Name missing or empty from update")
+		utils.HandleValidationError(w, fmt.Errorf("missing name from form data"))
+		return
+	}
+
 	externalId, err := getIdFromUrl(r.URL)
 	if err != nil {
 		utils.HandleBadRequest(w, fmt.Errorf("error parsing externalId from URL"))
 		return
 	}
 
-	res, err := nfh.service.UpdateConfig(externalId, config)
+	res, err := nfh.service.UpdateConfig(externalId, name, config)
 	if err != nil {
 		nfh.log.Error("error updating config for id '%s': ", externalId, err)
 		utils.HandleCustomErrors(w, err)

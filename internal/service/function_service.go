@@ -31,7 +31,7 @@ func (fs *FunctionService) UploadFunction(r *http.Request) (*data.FunctionEntity
 	return fs.fs.ProcessNewFunction(r)
 }
 
-func (fs *FunctionService) UpdateConfig(externalId string, config *data.FunctionConfig) (*data.FunctionEntity, error) {
+func (fs *FunctionService) UpdateConfig(externalId, name string, config *data.FunctionConfig) (*data.FunctionEntity, error) {
 	fs.log.Infof("Updating config for function '%s'", externalId)
 
 	// Validate the new config
@@ -41,7 +41,7 @@ func (fs *FunctionService) UpdateConfig(externalId string, config *data.Function
 		return nil, errors.NewValidationError(fmt.Sprintf("error validating config json: %v", err))
 	}
 
-	res, err := fs.repo.UpdateConfigByExternalId(externalId, *config)
+	res, err := fs.repo.UpdateConfigByExternalId(externalId, name, *config)
 	if err != nil {
 		fs.log.Error("Failed to retrieve function: ", err)
 		return nil, errors.NewInternalError(fmt.Sprintf("error updating new function config to db: %v", err))

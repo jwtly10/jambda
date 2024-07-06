@@ -4,6 +4,7 @@ import "time"
 
 type FunctionEntity struct {
 	ID            int             `json:"id"`
+	Name          string          `json:"name"`
 	ExternalId    string          `json:"external_id"`
 	State         string          `json:"state"`
 	Configuration *FunctionConfig `json:"configuration,omitempty"`

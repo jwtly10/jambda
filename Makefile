@@ -27,3 +27,10 @@ build:
 clean:
 	rm -f myapp
 
+# Target to run tests and output coverage report
+.PHONY: test-coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated in coverage.html"
