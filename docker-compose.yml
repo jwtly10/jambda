@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  jambda-postgres:
+    image: postgres:latest
+    container_name: jambda-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    env_file:
+      - db.env
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+
+    networks:
+      - jambda-network
+
+  jambda-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jambda-core
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - jambda-network
+    depends_on:
+      - jambda-postgres
+
+networks:
+  jambda-network:
+    driver: bridge
+
+volumes:
+  pgdata:

@@ -46,7 +46,6 @@ func main() {
 		logger.Fatal("Database connection failed:", err)
 		panic("Unable to connect to database")
 	}
-	logger.Info("Database connected")
 
 	// Init Router
 	router := api.NewAppRouter(logger)
